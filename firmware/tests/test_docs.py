@@ -54,6 +54,7 @@ FEATURES = {
 
 # phrases of old behaviour, anywhere in the docs or in the site's SVG images
 STALE = [
+    "Only official firmware",               # 1.0.0 site: Wi-Fi updates are signed; USB stays open, so "only official" overclaimed
     "Network name and PIN",                 # 0.9.81: the groups are "Wi-Fi and address" and "PIN"
     "Settings → Wi-Fi network",
     "shown at the top of",                  # the address moved from the page's top to Settings → Wi-Fi and address

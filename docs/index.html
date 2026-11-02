@@ -572,8 +572,8 @@ demand   = max(p_score, hr_score)</code></pre>
           For a problem that's hard to catch, a <b>Detailed recording</b> (Settings → Maintenance) keeps every
           second of a ride for 24 h, to download and send with your report.</li>
         <li><b>Backup:</b> download the settings as a file and restore them on this or another fan.</li>
-        <li><b>Firmware update:</b> pick the new release file on the page; the fan checks its signature (only official
-          releases are accepted) and every file, then restarts with the new version. No USB cable, the box stays closed.
+        <li><b>Firmware update:</b> pick the new release file on the page; the fan checks its signature (only
+          signed releases are accepted) and every file, then restarts with the new version. No USB cable, the box stays closed.
           <b>Check for updates</b> asks GitHub from your phone, when you press it, whether there is a new version.</li>
         <li><b>Shortcuts and home automation:</b> "Fan high" on your phone's home screen, a voice assistant, or the fan
           in Home Assistant; the <a href="help.html#shortcuts">manual</a> has the phone shortcuts, the
@@ -618,8 +618,10 @@ demand   = max(p_score, hr_score)</code></pre>
       the fan's own Wi-Fi and a settings PIN, so no fan keeps the published default. The PIN protects the settings,
       Wi-Fi, firmware updates and the logbook (and the fan buttons too, if you like); each phone or computer asks once
       and remembers it. Wrong guesses are slowed down. (<a href="help.html#settings">Settings</a>)</li>
-    <li><b>Only official firmware.</b> Updates from the page must carry the release's digital signature; a modified
-      or foreign file is refused and nothing changes. (<a href="build.html#update">Updating the firmware</a>)</li>
+    <li><b>Signed updates over Wi-Fi.</b> Updates from the page must carry the digital signature of the firmware's maker; a
+      modified or foreign file is refused and nothing changes. To switch to a fork or your own build, install it over USB
+      once (the owner's way in, with the box open); its maker then signs their own updates, and from then on the fan
+      accepts only those over Wi-Fi. (<a href="build.html#update">Updating the firmware</a>)</li>
     <li><b>Your data stays home.</b> No cloud, no account, no app. Settings and the logbook stay on the fan, and the
       logbook keeps no heart-rate or power values (only a detailed recording you start yourself does, for 24 h, to
       find a problem; deleted 7 days later). The only thing the fan asks the internet is the time.
