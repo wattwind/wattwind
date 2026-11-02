@@ -1,0 +1,48 @@
+# Python / pytest
+__pycache__/
+.pytest_cache/
+
+# Created on the Pico on first boot (user settings, may contain Wi-Fi password)
+firmware/config.json
+config.json
+
+# KiCad
+*-backups/
+*.lck
+fp-info-cache
+# outputs of the current board are regenerated
+hardware/production/*
+# the board 3D model stays: the enclosure script loads it for its fit check
+!hardware/production/wattwind.step
+
+# KiCad CLI reports
+*.rpt
+drc.json
+
+# KiCad per-user files
+*.kicad_prl
+.history/
+
+# Custom MicroPython builds (published as release assets, not in git)
+micropython/firmware/*.uf2
+
+# Enclosure print exports (Save as Mesh from Fusion): regenerated from the script, not in git
+hardware/enclosure/**/*.3mf
+hardware/enclosure/**/*.stl
+hardware/enclosure/**/*.obj
+dist/
+hardware/enclosure/export/
+firmware/log.txt
+firmware/log.old.txt
+firmware/config.json
+firmware/quick_boots.txt
+firmware/reset_reason.txt
+firmware/erased.txt
+
+# release signing key: never in git (kept outside the project, see SECURITY notes)
+release-signing-key/
+*.signing-key
+tools/signing_key_path.txt
+
+# The private release-signing key lives here (outside git, never published): see tools/signing_key_path.txt
+release-signing-key/

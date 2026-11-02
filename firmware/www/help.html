@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WattWind: help</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'%3E%3Crect width='80' height='80' rx='18' fill='%231f7a4d'/%3E%3Cg transform='translate(4,0)'%3E%3Cg stroke='%23cfe9da' stroke-width='5' stroke-linecap='round'%3E%3Cpath d='M8 30 H26'/%3E%3Cpath d='M5 42 H21'/%3E%3Cpath d='M10 54 H24'/%3E%3C/g%3E%3Cpath d='M50 10 L28 44 H40 L34 70 L60 32 H47 L56 10 Z' fill='%23fff'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="WattWind">
+<style>
+:root{--bg:#f4f5f7;--card:#fff;--fg:#1b1d21;--mute:#6b7280;--line:#dde0e5;--acc:#1f6feb;--warn:#b7791f}
+@media (prefers-color-scheme:dark){:root{--bg:#111316;--card:#1c1f24;--fg:#e8eaed;--mute:#9aa1ab;--line:#2e333a;--acc:#4c8dff;--warn:#e0a63a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:520px;margin:0 auto;padding:0 16px 32px}
+header{position:sticky;top:0;z-index:1;display:flex;justify-content:space-between;align-items:center;margin:0 -16px 12px;padding:10px 16px;background:var(--bg);border-bottom:1px solid var(--line)}
+section{scroll-margin-top:56px}
+h1{font-size:20px;margin:0;display:flex;align-items:center;gap:8px}
+.logo{height:24px;width:auto;display:block}.lg-s{stroke:#9aa69e}.lg-b{fill:#1f7a4d}.lg-w{stroke:#1f7a4d}.lg-d{stroke:var(--fg)}
+@media (prefers-color-scheme:dark){.lg-b{fill:#4cc38a}.lg-w{stroke:#4cc38a}}
+a{color:var(--acc)}
+section{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:4px 14px 10px;margin-bottom:12px}
+h2{font-size:17px;margin:12px 0 6px}
+h3{font-size:15px;margin:14px 0 4px}
+p,li{font-size:15px}
+ul{padding-left:20px;margin:6px 0}
+table{border-collapse:collapse;width:100%;font-size:14px;margin:6px 0}
+th,td{border-bottom:1px solid var(--line);padding:5px 4px;text-align:left}
+th{color:var(--mute);font-weight:600}
+.warn{color:var(--warn)}
+pre{font-size:12px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px;overflow-x:auto}
+nav{font-size:14px;line-height:1.9}
+.back{font-size:17px;font-weight:600;text-decoration:none;padding:6px 14px;border:1px solid var(--acc);border-radius:8px}
+</style>
+</head>
+<body>
+<main>
+<header><h1><svg class="logo" viewBox="0 0 456 96" role="img" aria-label="WattWind"><g transform="translate(4,8)"><g class="lg-s" stroke-width="6" stroke-linecap="round"><path d="M4 26 H30"/><path d="M0 42 H24"/><path d="M8 58 H28"/></g><path class="lg-b" d="M58 2 L30 46 H46 L38 78 L72 30 H55 L66 2 Z"/></g><g class="lg-w" transform="translate(100,22)" fill="none" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"><path d="M0 0 L9 52 L19 16 L29 52 L38 0"/><path transform="translate(50,0)" d="M0 52 L16 0 L32 52 M7 34 H25"/><path transform="translate(94,0)" d="M0 0 H32 M16 0 V52"/><path transform="translate(142,0)" d="M0 0 H32 M16 0 V52"/></g><g class="lg-d" transform="translate(300,22)" fill="none" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"><path d="M0 0 L9 52 L19 16 L29 52 L38 0"/><path transform="translate(52,0)" d="M0 0 V52"/><path transform="translate(68,0)" d="M0 52 V0 L30 52 V0"/><path transform="translate(112,0)" d="M0 0 H10 C44 0 44 52 10 52 H0 Z"/></g></svg> help</h1><a class="back" href="/">← back</a></header>
+
+<section>
+<nav>
+<a href="#start">Quick start</a> · <a href="#screen">The screen</a> · <a href="#buttons">Buttons</a> ·
+<a href="#auto">How Auto decides</a> · <a href="#response">Fan response</a> ·
+<a href="#settings">Settings</a> · <a href="#sensors">Sensors</a> · <a href="#linked">Linked fans</a> · <a href="#wifi">Wi-Fi</a> ·
+<a href="#shortcuts">Shortcuts</a> · <a href="#trouble">Troubleshooting</a> · <a href="#forgot">Forgot PIN</a> · <a href="#data">Your data</a> · <a href="#safety">Safety</a>
+</nav>
+</section>
+
+<section id="start">
+<h2>Quick start</h2>
+<ol>
+<li><b>Plug the fan in.</b> It starts in Auto with the fan off. The first time it opens its own Wi-Fi network
+<b>WattWind-XXXX</b> (password <i>wattwind</i>).</li>
+<li><b>Join that network</b> on your phone. The page usually opens by itself; if not, open <i>http://192.168.4.1</i>.</li>
+<li><b>Set up your fan</b> (the card at the top of the page, once): your own password for the fan's network and a
+settings PIN, each typed twice. Until then the settings can't be changed; the fan buttons already work. This device remembers the PIN.</li>
+<li><b>Connect it to your home Wi-Fi</b>: Settings → Wi-Fi and address → <b>Find networks</b> → <b>Use</b> next to
+yours → password → <b>Test Wi-Fi</b> → <b>Save and switch</b>. Note the address it shows (details: <a href="#wifi">Wi-Fi</a>).</li>
+<li><b>Open the page on your home network</b>: <i>http://wattwind.local</i> or that address, and put it on your
+home screen so it opens like an app: <b>iPhone</b> (Safari): Share <b>⎙</b> → <b>Add to Home Screen</b>;
+<b>Android</b> (Chrome): menu <b>⋮</b> → <b>Add to home screen</b>.</li>
+<li><b>Enter your values</b>: Settings → Rider → FTP, HR max and HR rest (<a href="#settings">Settings</a>).</li>
+<li><b>Wear the strap and start pedaling.</b> The fan finds your sensors by itself and remembers them
+(<a href="#sensors">Sensors</a>); the dots turn green. In Auto the fan comes on as you work harder.</li>
+</ol>
+</section>
+
+<section id="screen">
+<h2>The screen</h2>
+<ul>
+<li><b>Big number</b>: the fan level now, 0 (Off) to 3 (High), with its name below.</li>
+<li><b>Mode</b> (top right of the level): <b>Auto</b> = the fan decides; <b>Manual</b> = you picked a level;
+<b>Follow</b> = a linked fan copying its leader (<a href="#linked">Linked fans</a>). In Manual the fan is an
+ordinary fan: the level stays, even after you stop riding, until you change it or "Manual → auto after" runs out
+(8 hours unless you change it; 0 = never).</li>
+<li><b>Line under the level</b>: what happens next, e.g. <i>Waiting for sensors</i> (Auto with no data: the fan
+starts when you ride), <i>Back to Auto in …</i> or <i>Off in …</i> (Manual), <i>Following wattwind</i> or
+<i>… not heard</i> (a linked fan), <i>switching to …</i> (a level change in progress).</li>
+<li><b>W, rpm, bpm</b>: power, cadence and heart rate. <b>–</b> means no data.</li>
+<li><b>demand</b>: how hard you are working, 0 to about 1 (<a href="#auto">How Auto decides</a>). Auto picks
+the level from it. Next to it, what decided: <i>power</i>, <i>heart rate</i> or <i>both</i>. When one sensor is
+missing, it shows the other one taking over.</li>
+<li><b>Rider</b>: who is selected, shown when there is more than one rider.</li>
+<li><b>Dots</b>: <b>Sensors</b>, filled green = connected, red ring = not connected or, for heart rate,
+<i>(not worn)</i>; <i>· shared</i> = an app or watch gets the heart rate through the fan (Share heart rate,
+<a href="#sensors">Sensors</a>). On a linked fan: <b>Leader</b>, filled green = its leader is heard.</li>
+<li><b>Orange line</b> (only when needed): a sensor battery at 15 % or less, the controller running hot (chip
+at 70 °C or more), firmware files that don't match (<a href="#trouble">Troubleshooting</a>), a <i>test
+version</i> (below), or a <i>Safe start</i> (<a href="#trouble">Troubleshooting</a>).</li>
+<li><b>Set up your fan</b> (a card at the top, only until it is done): your own access point password and settings
+PIN, at the first start, after a PIN reset or after Erase everything. The settings stay locked until then; the fan
+buttons work.</li>
+<li><b>Message with OK</b>: a one-time message, e.g. after the PIN was reset.</li>
+<li><b>Lost contact</b>: when the page can't reach the fan, a red line says so and the values are greyed out,
+because they are not live. The network and the fan's address are in Settings → <b>Wi-Fi and address</b> (use the
+address when <i>wattwind.local</i> doesn't work). After a restart you started (reboot, update, restore) the page reconnects by itself and
+says when the fan is back.</li>
+<li><b>Top</b>: next to the logo the fan's name (the <i>name</i> in http://name.local, Settings → Wi-Fi and address), so
+with several fans you see which one this page controls; <b>?</b> on the right opens this manual.</li>
+</ul>
+</section>
+
+<section id="buttons">
+<h2>Buttons</h2>
+<ul>
+<li><b>Auto</b>: the fan decides. It starts in Auto when plugged in (with the fan off), so you can just start
+riding. Going back to Auto from a level you set by hand continues from that level: it steps down one level per
+minute if you aren't working hard enough for it.</li>
+<li><b>Off, 1, 2, 3</b>: set the level by hand (Manual).</li>
+<li><b>Follow</b> (instead of Auto, on a linked fan set to "same level"): hand the fan back to its leader.</li>
+<li><b>Off in 30 min / 1 h / 2 h</b> (under the buttons, when you picked 1, 2 or 3): a timer like an ordinary
+fan's. When it runs out the fan turns off and stays off. ✕ cancels it; picking another level keeps it; Auto
+or Off clears it.</li>
+<li><b>− and +</b> (under the buttons, in Auto): one level less or more than Auto chooses, for this ride
+(up to two levels, never above 3). Auto still follows the workout, just shifted: on +1 an easy part gets
+level 2 instead of 1. A + never switches the fan on while you aren't pedaling. It is cleared when the ride
+ends (the "off after no pedaling" time) and when you choose a level by hand.</li>
+</ul>
+</section>
+
+<section id="auto">
+<h2>How Auto decides</h2>
+<p>Every second the fan works out two scores and uses the higher one as <b>demand</b> (or only one of them, if the rider's
+<b>Decide by</b> setting says so: <a href="#settings">Settings</a>):</p>
+<ul>
+<li><b>Power</b>: smoothed power ÷ FTP. 200 W with FTP 240 gives 0.83.</li>
+<li><b>Heart rate</b>: where you are between rest and max. HR 150 with rest 60 and max 180 gives 0.75.</li>
+</ul>
+<p>The level changes one step at a time, with a gap between "up" and "down" so the fan doesn't flicker
+around a threshold (defaults):</p>
+<table>
+<tr><th>Level</th><th>Step up when demand ≥</th><th>Step down when demand &lt;</th></tr>
+<tr><td>1</td><td>0.45</td><td>0.38</td></tr>
+<tr><td>2</td><td>0.70</td><td>0.63</td></tr>
+<tr><td>3</td><td>0.88</td><td>0.81</td></tr>
+</table>
+<ul>
+<li>Steps up after at least <b>15 s</b> at the current level, down after at least <b>60 s</b> (defaults,
+changeable in Settings).</li>
+<li><b>You stop pedaling</b> (cadence 0 or under 20 W for 5 s): the fan keeps its level for a while
+(60 s with Normal response) so you cool down, then drops one level per minute until off.
+Start pedaling again and it carries on from where it is.</li>
+<li><b>Power sensor missing</b>: heart rate only. <b>Heart rate missing</b>: power only.
+<b>Both missing</b>: keeps the level 2 minutes, then one level down per minute.</li>
+<li>Power is smoothed: it rises within seconds when you push, and falls slowly when you ease off,
+so short recoveries don't switch the fan down.</li>
+</ul>
+<h3>In training-zone terms</h3>
+<p>The two scores are the usual training measures, so the step levels can be read in your zones:</p>
+<ul>
+<li><b>Power score</b> = % of FTP, as in Coggan's power zones: Z1 recovery up to 55 %, Z2 endurance 56–75 %,
+Z3 tempo 76–90 %, Z4 threshold 91–105 %, Z5 VO2max 106–120 % (sources differ by a percent or two at the edges).</li>
+<li><b>Heart-rate score</b> = % of heart-rate reserve (where you are between rest and max), the Karvonen method
+many watches offer as "%HRR" zones: usually 50–60, 60–70, 70–80, 80–90 and 90–100 %. That is not the same as
+% of maximum heart rate.</li>
+</ul>
+<table>
+<tr><th>Level</th><th>from</th><th>Power</th><th>Heart rate</th></tr>
+<tr><td>1</td><td>0.45</td><td>easy spinning, below Z2</td><td>below the 50–60 % zone</td></tr>
+<tr><td>2</td><td>0.70</td><td>upper endurance (Z2)</td><td>start of the 70–80 % zone</td></tr>
+<tr><td>3</td><td>0.88</td><td>top of tempo (Z3), sweet spot</td><td>upper 80–90 % zone</td></tr>
+</table>
+<p>Want a level from a certain zone? Set its "step up" to that zone's lower edge, e.g. 0.76 for level 2 from
+tempo, and keep its "step down" about 0.07 lower (Settings → Rider).</p>
+</section>
+
+<section id="response">
+<h2>Fan response</h2>
+<p>Settings → Rider → Fan response (saved per rider) sets how much your <b>power</b> is smoothed before it is used, and how
+long the fan keeps its level after you stop pedaling. Power jumps around a lot from second to second;
+smoothing turns it into a steady average that rises faster than it falls:</p>
+<ul>
+<li><b>Follows a push</b> (table below): how long smoothed power takes to get most of the way to a new, higher power.</li>
+<li><b>Eases off</b>: the same when power drops. Longer means short recoveries don't switch the fan down.</li>
+<li><b>Hold after stop</b>: how long the level is kept once you stop pedaling, before it steps down.</li>
+</ul>
+<table>
+<tr><th></th><th>Follows a push</th><th>Eases off</th><th>Hold after stop</th></tr>
+<tr><td>Calm</td><td>~20 s</td><td>~2 min</td><td>90 s</td></tr>
+<tr><td>Normal</td><td>~12 s</td><td>~75 s</td><td>60 s</td></tr>
+<tr><td>Quick</td><td>~6 s</td><td>~40 s</td><td>30 s</td></tr>
+</table>
+<p>Calm suits long steady rides and intervals with short rests; Quick suits rides where you want the
+fan to drop soon after an effort. Heart rate smoothing and the minimum times before a step up or down
+(Settings → Timing) are the same for all three.</p>
+</section>
+
+<section id="settings">
+<h2>Settings</h2>
+<p>Settings opens in groups: Rider, Timing, Wi-Fi and address, PIN, Sensors, Linked fans, Maintenance
+(backup, firmware update, detailed recording, restart) and Erase everything. Tap a group to open it. When something needs the settings
+PIN, the page asks for it once and this device remembers it. Messages for a part of the page you can't see pop up
+at the top.</p>
+<ul>
+<li><b>Rider</b>: several people can share the fan.
+<ul>
+<li><b>Saved per rider</b>: FTP, HR max / rest, Decide by, fan response, the step up / down levels (someone who runs hot
+can get the fan earlier) and the heart-rate strap. Everything else is shared.</li>
+<li><b>Add</b> creates a rider with the default values (then enter theirs); <b>Rename</b> and <b>Delete</b> work
+on the selected one. The last rider can't be deleted.</li>
+<li><b>A rider's strap</b>: select the rider, wear the strap, then under Sensors <b>Find sensors</b> and
+<b>Use for HR</b>, or just wait: a rider without a strap gets the first free one found. A strap belongs to one
+rider; giving it to another rider moves it.</li>
+<li><b>Switching by strap</b>: straps only send while worn, so when only another rider's strap is around, the fan
+switches to that rider within about 20 seconds. A rider chosen in the list stays selected (no switching by
+strap) until you choose again or the fan restarts.</li>
+</ul></li>
+<li><b>Reset to defaults</b>: <b>Reset this rider's values</b> (below the step levels) and <b>Reset these timing
+settings</b> (below Timing) undo your changes. The rider's name and strap, network settings and the PIN are
+never reset there.</li>
+<li><b>FTP</b>: your functional threshold power. Too high → the fan comes on late; too low → early.</li>
+<li><b>HR max / HR rest</b>: your maximum and resting heart rate. Use <b>measured</b> values: "220 minus age"
+is off by 10 bpm or more for many people, and that shifts when the fan reacts to your heart rate. HR max: the
+highest value your watch or training app has recorded in a hard all-out effort (often in its zone settings).
+HR rest: in the morning, lying down, before getting up. The defaults (190 / 60) suit an average 30-year-old.</li>
+<li><b>Decide by</b>: what Auto follows when both sensors are there. <b>Power and heart rate</b> (the default)
+takes whichever says you are working harder. If the chosen one is missing, Auto uses the other, so the fan
+keeps working.
+<ul>
+<li><b>Power only</b>, when your heart rate doesn't show your effort well: medication that keeps it low
+(beta blockers), an optical armband that jumps around, a cold or caffeine that raises it, or the strap is
+only worn for your training app.</li>
+<li><b>Heart rate only</b>, when you'd rather the fan follow how your body feels than every power change: on
+rollers or a basic trainer with estimated power, or in sprint or ERG workouts where power jumps around.</li>
+</ul></li>
+<li><b>Fan response</b>: Calm, Normal or Quick (<a href="#response">Fan response</a>).</li>
+<li><b>Thresholds</b>: the table in <a href="#auto">How Auto decides</a>. Lower numbers = more fan. Each "down"
+must be below its "up".</li>
+<li><b>Min. time before step up / down</b>: the 15 s and 60 s in How Auto decides.</li>
+<li><b>Manual → auto after</b>: return to Auto this many minutes after you pick a level (default 480 = 8 hours,
+up to 1440 = 24 hours; 0 = never). If you are still riding, Auto carries on from the current level. If nobody is riding, Auto steps the fan down
+one level a minute until it is off.</li>
+<li><b>Auto: highest level</b>: the highest level Auto (and the + nudge) may choose, 1 to 3 (default 3).
+For example 2 for quiet evenings. Levels you pick by hand are not limited.</li>
+<li><b>Auto: off after no pedaling</b>: fan off after this many minutes without pedaling, or with no
+sensor data at all (default 15). With a heart-rate strap only, the fan can't see pedaling: Auto follows your
+heart rate down instead, and the timer starts when the strap disconnects. Manual is not affected, so you can
+keep the fan on after a ride.</li>
+<li><b>Wi-Fi and address</b>: at the top, where the fan is connected, the signal (good / fair / weak, and in dBm:
+weaker than about -75 dBm can drop out) and its address (<i>http://name.local</i>
+and its IP: bookmark one). <b>Your Wi-Fi</b>: your home network (see <a href="#wifi">Wi-Fi</a>; saving reboots the fan).
+<b>The fan's own Wi-Fi</b>: the password of its network WattWind-XXXX, used for setting up and when your Wi-Fi isn't
+there (8+ characters, typed twice, never the default <i>wattwind</i>). <b>The fan's name</b> (hostname): the
+<i>name</i> in <i>http://name.local</i>; give each fan its own if you have several. The password and the name apply
+after a reboot.</li>
+<li><b>Settings PIN</b> (4–16 characters, chosen at the first setup): changing settings, installing firmware,
+reading the logbook, backups, the detailed recording and Erase everything need it, so nobody else on your network can. Each device (phone, tablet, computer) asks for it once
+and then remembers it (in the browser, for that address); <b>Forget the PIN on this device</b> clears it, for
+example on a shared tablet. <b>New settings PIN</b> changes it; it can't be removed. The fan buttons work without it, unless you
+tick <b>Fan buttons need the PIN too</b> (useful with children in the house, or a shared network).
+Forgot it? See <a href="#forgot">Forgot the PIN or password</a>.</li>
+<li><b>Saving</b>: as soon as you change a value, its field gets a coloured edge and a bar at the bottom of the
+screen says <i>Unsaved changes</i>, with <b>Save</b> (writes what changed) and <b>Undo</b> (shows the saved values
+again). A change counts only once it is saved: until then the fan keeps the old value. A value the fan can't take is
+marked red, with what to change. Choosing another rider or sensor, or leaving the page, asks first. <b>Decide by</b>
+and <b>Fan response</b> are saved as soon as you pick.</li>
+<li><b>Backup</b>: <b>Download settings</b> saves the settings as a file (riders with their FTP, heart rate, levels and
+straps, timing, sensors, Wi-Fi name, linked fans). <b>Restore from a file</b> puts them back, on this fan or another
+one (after swapping the Pico, or to set up a second fan alike); the fan checks every value and restarts. Passwords,
+the PIN and the linked-fans keys are only in the file if you tick <b>Include passwords and keys</b>: then keep the file
+private.</li>
+<li><b>Firmware update</b>: get the update file (<i>wattwind-update-….tar</i>, from the project's releases: <i>github.com/wattwind/wattwind</i>) onto your
+phone or computer, pick it here and press <b>Install</b> (settings PIN). First the fan checks the file's
+<b>signature</b>: it installs only updates from the maker of the firmware it runs (<i>the signature doesn't
+match</i>: see <a href="#trouble">Troubleshooting</a>). Then it turns off while the files come in (about a minute),
+checks every file, and only then restarts with the new version; your settings stay. If anything goes wrong on the
+way (the connection drops, a file arrives damaged, the file is not a WattWind update), nothing changes and the fan
+carries on with its old version. The page warns when the file is an older version. MicroPython itself is not updated this way (that needs USB, rarely needed).
+<b>Test versions</b> (e.g. <i>1.0.1-test.2</i>): sometimes made to try a fix for a problem you reported. The page
+says <i>Test version</i> while one runs; when the fix works, install the official version (1.0.1 here) the same
+way. It counts as newer, so the page doesn't warn.</li>
+<li><b>Check for updates</b> (above Choose update file): your phone or computer asks the project's GitHub page whether
+there is a newer version, and if so links to it (what's new, and the update file). The fan itself doesn't go online
+for it, and nothing is installed by itself. It needs internet on the phone: on the fan's own Wi-Fi it can't check.
+To hear about new versions without checking, open the project on GitHub (<i>github.com/wattwind/wattwind</i>) and choose <b>Watch → Custom →
+Releases</b> (needs a free GitHub account): GitHub then emails you when one comes out.</li>
+<li><b>Line at the bottom</b>: firmware version and the boards it is made for, how long the fan has been running, why it last
+restarted, the firmware file check (<i>files: ok</i>, see below), the Wi-Fi signal (weaker than about -75 dBm can drop out), the Pico chip's temperature, the
+sensors' battery level if they report it, <i>(test version)</i> for a test build and <i>detailed recording on</i> while
+one runs. Useful when asking for help. The chip temperature is not the room
+or box temperature: the chip warms itself (processor and radio), so it reads about 10-15 °C above the air,
+and its sensor is only roughly accurate. It is there to spot the box getting hot, not to read the room.</li>
+<li><b>Logbook</b> (link at the end of that line): the fan writes a line at every start (with the reason)
+and a status line (mode, level, Wi-Fi, chip temperature, free memory, sensors): every 5 minutes while something
+changes, every 30 minutes when nothing does. The logbook is two files: when the current one is full, the older
+one is deleted and a new one starts, so it always holds about 4½ to 9 days of a busy fan, weeks of an idle one.
+<b>Logbook</b> shows the current file, <b>Older</b> the one before, <b>Download</b> both (see below). It needs the
+settings PIN (each device asks once). Events: Wi-Fi
+joins and drops with their timing, sensors connecting and dropping, an app or watch connecting to Share heart rate, program errors, buttons pressed on the page, settings saved (names only,
+not values), every fan level change with its reason (for example <i>fan 1 -> 2 (auto: demand 0.72 >= 0.7 (power))</i>,
+<i>stopped pedaling</i>, <i>manual</i>), why the fan turned itself off (idle off, off timer, back to Auto), firmware
+updates, and security events (wrong PINs, pairing, unpairing, refused requests), kept across restarts.
+Times are UTC once the fan got the time from the internet. So you can see whether the fan restarted overnight,
+and why, from your phone. <b>Download</b> (in the logbook) saves a diagnostics file: the logbook plus status, settings (without passwords,
+PIN or keys), free space, memory and Wi-Fi state. Send it when you ask for help, but privately: it contains your
+network name and your sensors' addresses.</li>
+<li><b>Detailed recording</b> (Settings → Maintenance), for finding a problem: for 24 h the fan records every second
+what it gets (power, cadence, heart rate) and what it does (level, mode), every minute its memory, Wi-Fi signal and
+how promptly it runs, and events such as sensor data gaps over 2 s, in a file of its own (the normal logbook keeps
+its history). <b>Start recording</b>, ride until the problem shows, then <b>Download recording</b> and send it with
+your report. It also continues after a restart (often the problem itself). It stops by itself after 24 h; the file
+stays for download and is deleted 7 days later, at the next Start, with <b>Delete recording</b> or Erase everything.
+When full it drops its oldest part, keeping the latest 5-6 hours of riding. A firmware update that needs the space
+deletes it, and so does installing an older firmware that doesn't have this feature. It holds your heart rate: share it only with someone you trust.</li>
+<li><b>Erase everything</b>: before giving the fan away, or to start again. Deletes all settings, riders,
+sensors, the Wi-Fi network, the PIN, the linked-fans keys, the logbook and a detailed recording (settings PIN). The fan restarts as
+new: its own access point <b>WattWind-XXXX</b> with the password <i>wattwind</i>, the page says <i>Everything was
+erased</i> and shows the setup card. The firmware stays. To keep your settings, download a backup first (above): <b>Restore from a file</b> puts them
+back afterwards.</li>
+</ul>
+</section>
+
+<section id="sensors">
+<h2>Sensors</h2>
+<ul>
+<li>The fan uses one <b>heart rate</b> sensor and one <b>power</b> sensor (a smart trainer or power meter),
+both at once.</li>
+<li>With none chosen, it takes the <b>first one it finds</b> and remembers it, so it won't later pick up
+another rider's sensor.</li>
+<li><b>Find sensors</b> lists what is nearby; <b>Use</b> picks one. <b>Forget</b> disconnects the current
+one and takes the first one found again.</li>
+<li>Wake the sensor first: wear the strap (moisten it), start pedaling on the trainer.</li>
+<li><b>Strap taken off</b>: some straps keep sending their last value for a minute or two. The fan notices within
+a few seconds if the strap reports skin contact or beat-to-beat times (most chest straps do) and shows
+<i>(not worn)</i>; Auto then goes by power. The fan remembers which straps send beat-to-beat times, so this also
+works when it reconnects to a strap lying off, after a restart. A reading under 30 bpm (a strap held in the hand can
+send 0) counts as no reading. Sensors that report neither (some optical armbands),
+and a new strap at its very first connection, count as missing when they stop sending or disconnect.</li>
+<li>Some sensors accept only one or two connections. If the fan can't connect, close other apps that
+use the sensor, or free a connection in the trainer app. Most straps and trainers also speak ANT+: connect
+the training app over ANT+ and the Bluetooth connection stays free for the fan.</li>
+<li><b>Share heart rate</b> (off until you tick it): for a strap that allows only one connection. The fan passes
+the strap's heart rate on as a Bluetooth heart-rate sensor of its own, named <i>WattWind-XXXX HR</i>: in your app or
+watch, add a heart-rate sensor and choose that name instead of the strap. It sends exactly what the strap sends
+(heart rate and beat-to-beat times), and nothing while the strap is off or missing. One app or watch at a time.
+The line below the tick box says whether it is waiting or connected, and the status shows <i>· shared</i> next to
+the strap's name. Not on a follower (it has Bluetooth off). It works with apps and bike computers that connect
+without pairing (tried: MyWhoosh, Wahoo ELEMNT Bolt and Roam). A Garmin Edge says <i>pairing failed</i>: the fan
+can't pair (a limit of its Bluetooth software). Garmin devices take the strap over ANT+ directly, so use that.</li>
+</ul>
+</section>
+
+<section id="linked">
+<h2>Linked fans</h2>
+<ul>
+<li>Other WattWinds can <b>follow</b> this one, as many as you like: only this fan (the leader) talks to your
+sensors, the others get the values over Wi-Fi. That leaves the sensors' Bluetooth connections free for your training app.</li>
+<li><b>Pairing, once:</b> on the leader, Settings → Linked fans → <b>Pair a new fan</b> (open for 60 s). On the
+other fan, press <b>Follow</b> next to the leader in the same list. It restarts and follows from then on.</li>
+<li><b>Same level</b>: the follower runs at the leader's level, whatever the leader does (Auto, the buttons, the off
+timer), so the leader's page works as one remote for all of them. <i>One / two lower</i> makes it a gentler side fan that joins in with harder efforts: one lower is off while the
+leader is at 1, two lower runs only when the leader is at 3. <i>One higher</i> suits a weaker or farther fan (when the leader is off, it is off too).
+<b>Own settings</b>: it takes the leader's heart rate and power and decides with its own Auto settings, for
+example a fan that only starts at harder efforts.</li>
+<li>On the follower, Settings → Linked fans: <b>Follow</b> (same level / own settings) and <b>Level</b> apply
+at once, no restart.</li>
+<li>The follower's own buttons still work; its <b>Follow</b> button (where Auto is) hands it back to the leader.
+Its screen shows the leader's heart rate and power, and a <b>Leader</b> dot.</li>
+<li>If the leader goes quiet (unplugged, Wi-Fi gone), the follower holds its level for a minute, then steps down
+one level a minute until off.</li>
+<li>Both fans must be on the same home network. Guest networks, or routers with "client isolation", block it.</li>
+<li><b>Stop following</b> (on the follower) switches it back to its own sensors; it restarts.</li>
+<li>Followers only listen and send nothing, so the leader doesn't list them; each follower shows on its own page
+whether it hears the leader. The list on the leader shows other <i>leaders</i>, for following one.</li>
+<li><b>Unpair all followers</b> (on the leader) gives it a new key: every fan following it stops, holds its
+level for a minute, then turns off, and its page says so. To link one again: <b>Pair a new fan</b> on the leader,
+then <b>Pair again</b> on the follower (no restart).</li>
+<li>The messages are encrypted and signed with the key that pairing hands over: other devices on your home
+network can't read the heart rate, power or fan level, and can't fake them. Only the fan's name is readable, so
+an unpaired fan can list the leaders nearby.</li>
+<li>Update linked fans together. Most updates don't change how fans talk to each other, but when one does
+(the release notes say so), a fan on older firmware can't read the leader and acts as if it were switched off.</li>
+</ul>
+</section>
+
+<section id="wifi">
+<h2>Wi-Fi</h2>
+<ul>
+<li><b>First setup</b>: join <b>WattWind-XXXX</b>; the page usually opens by itself (a "sign in to
+network" message on most phones). If not, open <i>http://192.168.4.1</i>. (Some other plain <i>http://</i> addresses lead there too, but not
+<i>https://</i> ones, and not on phones that use their own "private DNS": 192.168.4.1 always works.) An iPhone shows the sign-in sheet only until you choose "Use
+without Internet"; after that, open Safari yourself. Fill in the <b>Set up your fan</b> card first (see
+<a href="#start">Quick start</a>). Then Settings → Wi-Fi
+network: tap <b>Find networks</b> and <b>Use</b> next to yours (or type its name), enter the password and tap <b>Test Wi-Fi</b>. The fan joins it while its own network stays
+on and shows the address your router gave it: note it, then tap <b>Save and switch</b>. A wrong password
+or a network out of range is reported right away, and nothing is saved.</li>
+<li><b>Home network</b>: open <i>http://wattwind.local</i> (works on iPhone, Mac, Windows and most
+laptops; Android often not). Otherwise use the fan's IP address, given by your router. To find it:
+<ul>
+<li>your router's app or admin page lists connected devices: look for <b>wattwind</b>;</li>
+<li>open <i>http://wattwind.local</i> on a PC or laptop (they resolve .local): the address is shown
+in Settings → Wi-Fi and address;</li>
+<li>a network scanner app on the phone (e.g. Fing) lists it too;</li>
+<li>with USB connected, the fan prints it at start-up (<i>wifi: connected … IP …</i>).</li>
+</ul>
+Tip: in the router, <b>reserve</b> that address for the fan (often called "DHCP reservation" or
+"static lease"), then bookmark it. Once the page is open, Settings → Wi-Fi and address shows it too.</li>
+<li><b>Fan's own network</b>: if no home network is saved or found at start-up, the fan starts the network
+<b>WattWind-XXXX</b> with the password you chose at the first setup (<i>wattwind</i> before it). Join it and open
+<i>http://192.168.4.1</i>.</li>
+<li><b>Router goes away</b> (or starts slower than the fan after a power cut): the fan keeps trying for
+2 minutes, then starts its own network so the page stays reachable. It tries the home network again after
+2 minutes (a router that has just been switched on is usually back by then), then every 5 minutes, and switches back
+by itself (not while the page is open over its own network).</li>
+<li><b>Which networks</b>: the fan uses <b>2.4 GHz</b> Wi-Fi with WPA2 (or WPA2/WPA3 mixed). 5 GHz-only and
+WPA3-only networks don't work; most routers have a 2.4 GHz network or a setting for it.</li>
+<li><b>Change network later</b> (from the home network): Settings → Wi-Fi and address → Save Wi-Fi and reboot. The fan reboots
+and joins it; if it can't, it starts its own network so you can fix the settings.</li>
+<li>The fan keeps working without Wi-Fi; the page is only for watching and control.</li>
+</ul>
+</section>
+
+<section id="shortcuts">
+<h2>Shortcuts and home automation</h2>
+<p>The fan buttons are simple web requests, so a phone shortcut, a voice assistant or Home Assistant can
+press them too. Use the fan's address: <i>http://wattwind.local</i> works on iPhone; on Android and in
+Home Assistant use its IP address (Settings → Wi-Fi and address).</p>
+<ul>
+<li><b>iPhone (Shortcuts app)</b>: new shortcut → action <b>Get Contents of URL</b> → URL
+<i>http://wattwind.local/api/mode</i> → Method <b>POST</b>, Request Body <b>JSON</b>, fields
+<i>mode</i> = <i>manual</i> (Text) and <i>level</i> = <i>3</i> (Number). Name it "Fan high": Siri runs it
+by name, and it can go on the home screen. For Auto use <i>mode</i> = <i>auto</i>; add
+<i>nudge</i> = 1 for "a bit more fan".</li>
+<li><b>Android</b>: the free app <b>HTTP Shortcuts</b>: new shortcut, method POST, URL
+<i>http://&lt;IP&gt;/api/mode</i>, body type custom text, content type <i>application/json</i>, body
+<i>{"mode":"manual","level":3}</i>. Add it to the home screen as a button.</li>
+<li><b>Home Assistant</b>: the fan as a sensor and buttons in a dashboard. The ready-made configuration is in
+the build guide on the project site (<i>The fan's API</i>).</li>
+<li>If <b>Fan buttons need the PIN too</b> is on, add <i>"pin": "1234"</i> (your PIN) to the request.</li>
+<li>Reserve the fan's IP in your router (see Wi-Fi) so the shortcuts keep working.</li>
+</ul>
+</section>
+
+<section id="trouble">
+<h2>Troubleshooting</h2>
+<ul>
+<li><b>Page doesn't load</b>: use the IP address instead of .local; check which network your phone is on;
+reboot the fan (Settings → Maintenance → Restart, or power off and on).</li>
+<li><b>192.168.4.1 doesn't open on Android</b>: Android sees that WattWind-XXXX has no internet and quietly
+uses mobile data instead. Tap <i>Stay connected</i> / <i>Use this network</i> when it asks, or turn mobile
+data off while you set up.</li>
+<li><b>Several fans in one home</b>: give each its own hostname (Settings → Wi-Fi and address → The fan's name, e.g.
+<i>wattwind2</i>, <i>wattwind3</i>), or they all answer at wattwind.local.</li>
+<li><b>Fan stays off in Auto</b>: check the dots and the demand value. Demand below the level 1 threshold
+means no fan yet: check FTP and HR settings.</li>
+<li><b>Fan switched off by itself</b>: in Auto, the "off after no pedaling" time (15 min unless changed). In
+Manual, the <b>Off in…</b> timer, or "Manual → auto after" (8 hours unless changed) handed it back to Auto,
+which turns the fan off when nobody is riding. The logbook says which.</li>
+<li><b>Fan changes level often</b>: choose Calm, or widen the gap between "up" and "down" thresholds.</li>
+<li><b>Sensor not found</b>: see Sensors above; a sensor already connected to the fan usually stops
+advertising, so it may not appear in Find sensors (it shows as connected).</li>
+<li><b>A linked fan doesn't follow</b>, or the leader isn't in its list: both must be on the same home
+network (not a guest network; no "client isolation" in the router). A fan that follows another can't be a
+leader itself. Pairing: press <b>Pair a new fan</b> on the leader first, then <b>Follow</b> within 60 s.</li>
+<li><b>"not addressed to this fan"</b>: the page was opened by a name the fan doesn't know as its own. It answers only to
+its hostname (<i>wattwind</i>, <i>wattwind.local</i>, or with the router's usual local ending such as <i>.lan</i>,
+<i>.home</i> or <i>.fritz.box</i>) and to its IP address. This protects it from websites that try to reach devices in
+your home through your browser. Open it as <i>http://wattwind.local</i> or by its IP.</li>
+<li><b>"too many wrong PINs"</b>: after two wrong PINs, each further try has to wait (1, 2, 4 … up to 60 seconds) so a
+PIN can't be guessed quickly. Wait the time shown, then enter the right PIN.</li>
+<li><b>"first set your own access point password and a PIN"</b>: the fan's first setup isn't done yet (a new fan,
+after a PIN reset or Erase everything). Fill in the <b>Set up your fan</b> card at the top of the page.</li>
+<li><b>"the signature doesn't match"</b> (Firmware update): the file isn't from the maker of the firmware your fan
+runs, for example a modified or foreign firmware. Nothing changed. Use the official release file; firmware from
+someone else can only be installed over USB (see the build guide).</li>
+<li><b>Reboot</b>: Settings → Maintenance → Restart turns the fan off and restarts it (about 30 s).</li>
+<li><b>"The settings file was damaged"</b> (a message on the page): the fan couldn't read its settings (rare,
+for example after a flash fault) and started with default settings, so it asks for the first setup again. A copy
+of the damaged file stays on the fan (<i>config.json.bad</i>). Restore a backup if you have one
+(Settings → Maintenance → Restore from a file); otherwise enter the settings again.</li>
+<li><b>The fan runs although the page says Off</b>, or <b>a level doesn't change the speed</b>: unplug the fan.
+A relay contact has probably failed (welded shut, it happens with age). One failed relay alone can't keep the fan
+running when it is off, the board is built that way, but it needs repair before further use: replace the relays.</li>
+<li><b>"The controller is running hot"</b>: the chip is at 70 °C or more (rated to 85 °C), so the air in the box
+is around 55 °C. Give the box air: don't cover it, keep it out of the sun and away from heaters.</li>
+<li><b>Restarts by itself</b>: the line at the bottom of Settings shows why it last restarted (after a firmware
+update from the page it says <i>firmware updated to …</i>; after copying files by USB, <i>end of update mode</i>). "Watchdog"
+means the program stopped responding and was restarted with the fan off; if that repeats, note the firmware
+version and report it.</li>
+<li><b>"Safe start"</b> (an orange line and a message): the fan restarted three times in a row after an error, so it
+started with default ride settings to stay reachable. Network, Wi-Fi, PIN and sensors are kept, and your saved settings
+are untouched, but they can't be changed until the next normal start. Install the latest firmware (Settings →
+Maintenance), or Restart to try your settings again; the logbook shows what failed (worth reporting). If the fan
+couldn't start with its saved settings at all, the message says so, and it starts the same safe way.</li>
+<li><b>"Some saved settings were not valid"</b>: at every start the fan checks each saved setting the way the page
+checks a new one. One that fails (saved by an older version, or damaged) goes back to its default, and the message
+names it: check it in Settings.</li>
+<li><b>"Firmware files differ from their list"</b>: when it starts, the fan checks every firmware file against
+the list that comes with the firmware (<i>manifest.json</i>). A file is changed or missing, usually from an
+upload that stopped halfway or a file left from another version. The fan still runs, but install the
+release's update file again (Settings → Maintenance → Firmware update), or copy the whole firmware folder again by USB. (For people who change the firmware: run <i>tools/make_manifest.py</i> before
+copying, and the check says ok again.) <i>files: not checked</i> means there is no list on the fan.</li>
+</ul>
+</section>
+
+<section id="forgot">
+<h2>Forgot the PIN or password</h2>
+<ul>
+<li><b>New router or home network</b>: no PC needed. The fan doesn't find the old network, so about 20 s after
+plugging it in it starts its own network <b>WattWind-XXXX</b>. Join it and set up Wi-Fi as in
+<a href="#wifi">Wi-Fi</a> (First setup).</li>
+<li><b>Forgot the access point password</b>, but the fan is still on your home network: open the page and set
+a new one in Settings.</li>
+<li><b>Forgot the settings PIN</b>: settings, Wi-Fi, Restart, firmware update, the logbook, backups, the detailed
+recording and Erase everything are locked (and the fan buttons, if you chose that).</li>
+</ul>
+<p><b>Reset the PIN and the access point password</b> (no tools needed):</p>
+<ol>
+<li>Plug the fan into the wall socket, wait 2–3 seconds, unplug it.</li>
+<li>Do that <b>3 times</b> in a row.</li>
+<li><b>Then plug it in a fourth time and leave it plugged in</b>: this fourth power-up does the reset. After about a minute, open the page: it says
+<i>PIN and access point password were reset</i>. Tap <b>OK</b> (the message also goes away when you use the
+fan buttons or save settings).</li>
+</ol>
+<p>Now the page shows the <b>Set up your fan</b> card again: choose a new access point password and PIN. Until you
+do, the fan's own network uses the password <i>wattwind</i>, and the settings can't be changed. Everything else stays: home Wi-Fi,
+FTP, heart rate, thresholds, timeouts, sensors and hostname. If the home network is gone, the fan starts
+<b>WattWind-XXXX</b> with the password <i>wattwind</i>. If the page doesn't show the message, unplug for a
+few seconds and start again: each short plug-in must be under 10 seconds.</p>
+<p>Know the PIN and just want a clean start? Settings → <b>Erase everything</b>. Last resort without the PIN:
+someone with a computer can delete <i>config.json</i> on the fan over USB (with
+<i>mpremote</i>), which resets all settings.</p>
+</section>
+
+<section id="data">
+<h2>Your data</h2>
+<p>Everything stays on the fan. It has no cloud, no account and no app, and sends nothing to the maker or anyone
+else; the only thing it asks the internet is the time (below). <b>Check for updates</b> is your phone asking GitHub,
+only when you press it.</p>
+<ul>
+<li><b>Stored on the fan</b>: the settings (riders' names, FTP and heart-rate range, the sensors' Bluetooth
+addresses, the Wi-Fi network and password, the PIN, the linked-fans key) and the logbook (events and a status line,
+without heart rate or power values). Heart rate, power and cadence are only kept in memory while you ride, unless you
+start a <b>Detailed recording</b> (Maintenance): then they are kept, second by second, for up to 24 h, and the file
+is deleted 7 days later at the latest.</li>
+<li><b>Leaves the fan</b>: the page you open, over your home network (plain HTTP, inside your Wi-Fi's encryption);
+on a leader of linked fans, one packet a second on the home network with its level, heart rate, power and cadence
+(encrypted, readable only by its paired fans); with <b>Share heart rate</b> on, your heart rate over Bluetooth to
+the app or watch connected to it (below); and a time query to the internet
+(NTP), for the logbook's clock. Not from the fan: <b>Check for updates</b> (Maintenance) is a question from your
+phone or computer to GitHub, only when you press it, so GitHub sees your internet address, as with any website.</li>
+<li><b>Sensors</b>: heart-rate straps send their values unencrypted over Bluetooth (that is how the standard
+works, for every receiver); the fan only listens to the ones it has saved. With <b>Share heart rate</b> on, the fan
+sends your heart rate the same way, like a strap: any app or watch nearby can connect to it, one at a time.</li>
+<li><b>Delete it</b>: Settings → <b>Erase everything</b> (above). The page confirms it after the restart.</li>
+</ul>
+</section>
+
+<section id="safety">
+<h2>Safety</h2>
+<ul>
+<li class="warn">The controller switches mains voltage. Keep the enclosure closed and the cables in their
+strain reliefs; unplug it before opening.</li>
+<li class="warn"><b>In Auto the fan can start by itself</b> when the sensors report riding (a linked fan when its
+leader does). Unplug the fan before cleaning it, moving it or reaching into it.</li>
+<li>The fan keeps its own earth wire to its metal parts: don't disconnect it when wiring the controller.</li>
+<li>Only one speed is ever switched on, and the fan is off whenever the controller starts or restarts.</li>
+<li>If the software stops responding, a watchdog restarts it within seconds, with the fan off.</li>
+</ul>
+</section>
+</main>
+</body>
+</html>

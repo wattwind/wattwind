@@ -1,0 +1,1117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="img/wattwind-icon.svg" type="image/svg+xml">
+<title>WattWind: build guide</title>
+<meta name="description" content="How to build WattWind, the automatic trainer fan: parts, the parametric 3D-printed enclosure, step-by-step build and fan wiring, firmware updates and the board design.">
+<style>
+:root {
+  --bg: #f6f7f4;
+  --surface: #ffffff;
+  --surface-2: #eef1ec;
+  --text: #1c211d;
+  --muted: #5b655d;
+  --line: #d9dfd8;
+  --accent: #1f7a4d;
+  --accent-soft: #dcefe4;
+  --warn: #b23a1a;
+  --warn-soft: #fbe6de;
+  --render-bg: #20262a;
+  --code: #eef1ec;
+  --radius: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12161a;
+    --surface: #1a2025;
+    --surface-2: #222a30;
+    --text: #e6ebe7;
+    --muted: #9aa69e;
+    --line: #2e373e;
+    --accent: #4cc38a;
+    --accent-soft: #1d3a2c;
+    --warn: #ff8a65;
+    --warn-soft: #3a2119;
+    --render-bg: #0d1013;
+    --code: #222a30;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12161a;
+  --surface: #1a2025;
+  --surface-2: #222a30;
+  --text: #e6ebe7;
+  --muted: #9aa69e;
+  --line: #2e373e;
+  --accent: #4cc38a;
+  --accent-soft: #1d3a2c;
+  --warn: #ff8a65;
+  --warn-soft: #3a2119;
+  --render-bg: #0d1013;
+  --code: #222a30;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 17px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+.wrap { max-width: 980px; margin: 0 auto; padding: 0 16px; }
+header.hero { padding: 56px 0 24px; }
+.logo { height: 56px; width: auto; display: block; margin: 6px 0 14px; }
+.lg-s { stroke: var(--muted); } .lg-b { fill: var(--accent); } .lg-w { stroke: var(--accent); } .lg-d { stroke: var(--text); }
+.kicker { color: var(--accent); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; font-size: 13px; }
+h1 { font-size: clamp(32px, 6vw, 52px); line-height: 1.1; margin: 8px 0 16px; letter-spacing: -.02em; }
+h2 { font-size: 28px; margin: 0 0 12px; letter-spacing: -.01em; }
+h3 { font-size: 19px; margin: 24px 0 8px; }
+p { margin: 0 0 14px; }
+.lead { font-size: 20px; color: var(--muted); max-width: 720px; }
+a { color: var(--accent); }
+section { padding: 40px 0; border-top: 1px solid var(--line); }
+nav.toc { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+nav.toc a {
+  text-decoration: none; color: var(--text); background: var(--surface);
+  border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; font-size: 14px;
+}
+nav.toc a:hover { border-color: var(--accent); }
+figure { margin: 20px 0; }
+figure img { display: block; width: 100%; height: auto; border-radius: var(--radius); }
+figure.render img { background: var(--render-bg); }
+figcaption { color: var(--muted); font-size: 14px; margin-top: 8px; }
+.shots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; align-items: start; margin: 8px 0 18px; }
+.shots img { width: 100%; height: auto; border: 1px solid var(--line); border-radius: 10px; }
+@media (max-width: 720px) { .shots { grid-template-columns: 1fr 1fr; } }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+@media (max-width: 720px) { .grid2, .grid3 { grid-template-columns: 1fr; } }
+.card {
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 18px 20px;
+}
+.card h3 { margin-top: 0; }
+.card p:last-child { margin-bottom: 0; }
+.facts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 24px 0 0; }
+@media (max-width: 720px) { .facts { grid-template-columns: 1fr 1fr; } }
+.fact { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
+.fact b { display: block; font-size: 22px; }
+.fact span { color: var(--muted); font-size: 14px; }
+.table-scroll { overflow-x: auto; margin: 12px 0 20px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 15px; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { background: var(--surface-2); font-weight: 600; white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+code, pre { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 14px; }
+code { background: var(--code); padding: 1px 5px; border-radius: 5px; }
+pre { background: var(--code); padding: 14px 16px; border-radius: var(--radius); overflow-x: auto; margin: 12px 0 20px; }
+pre code { background: none; padding: 0; }
+.warn {
+  background: var(--warn-soft); border: 1px solid var(--warn); border-radius: var(--radius);
+  padding: 16px 20px; margin: 20px 0;
+}
+.warn strong { color: var(--warn); }
+.note { background: var(--accent-soft); border-radius: var(--radius); padding: 14px 18px; margin: 16px 0; }
+ul, ol { padding-left: 22px; margin: 0 0 14px; }
+li { margin: 4px 0; }
+.diagram { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; overflow-x: auto; }
+.diagram svg { display: block; width: 100%; min-width: 560px; height: auto; }
+.diagram svg text { font-family: ui-monospace, Consolas, monospace; font-size: 13px; fill: var(--text); }
+.diagram svg .muted { fill: var(--muted); }
+.diagram svg .ln { stroke: var(--text); stroke-width: 1.6; fill: none; }
+.diagram svg .live { stroke: var(--warn); stroke-width: 2.4; fill: none; }
+.diagram svg .dot { fill: var(--text); }
+.diagram svg .box { stroke: var(--text); stroke-width: 1.4; fill: var(--surface-2); }
+details.more { margin: 14px 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: 10px 16px; }
+details.more > summary { cursor: pointer; font-weight: 600; color: var(--accent); }
+details.more[open] > summary { margin-bottom: 8px; }
+.flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: 10px; margin: 16px 0; }
+.flow .step { flex: 1 1 150px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; }
+.flow .step b { display: block; }
+.flow .step span { color: var(--muted); font-size: 14px; }
+.flow .arrow { align-self: center; color: var(--muted); font-size: 20px; }
+@media (max-width: 720px) { .flow .arrow { display: none; } }
+footer { padding: 32px 0 56px; color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); }
+.theme-toggle {
+  position: fixed; top: 12px; right: 12px; background: var(--surface); color: var(--text);
+  border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; font-size: 13px; cursor: pointer;
+}
+.to-top {
+  position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 10;
+  width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  background: var(--surface); color: var(--text); border: 1px solid var(--line); text-decoration: none;
+  font-size: 20px; box-shadow: 0 2px 8px rgba(0,0,0,.15); opacity: 0; visibility: hidden; transition: opacity .2s;
+}
+.to-top.show { opacity: 1; visibility: visible; }
+</style>
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle light or dark theme">Theme</button>
+<a class="to-top" id="toTop" href="#" aria-label="Back to the top">↑</a>
+
+<div class="wrap">
+<header class="hero">
+  <a href="index.html" aria-label="WattWind home"><svg class="logo" viewBox="0 0 456 96" role="img" aria-label="WattWind"><g transform="translate(4,8)"><g class="lg-s" stroke-width="6" stroke-linecap="round"><path d="M4 26 H30"/><path d="M0 42 H24"/><path d="M8 58 H28"/></g><path class="lg-b" d="M58 2 L30 46 H46 L38 78 L72 30 H55 L66 2 Z"/></g><g class="lg-w" transform="translate(100,22)" fill="none" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"><path d="M0 0 L9 52 L19 16 L29 52 L38 0"/><path transform="translate(50,0)" d="M0 52 L16 0 L32 52 M7 34 H25"/><path transform="translate(94,0)" d="M0 0 H32 M16 0 V52"/><path transform="translate(142,0)" d="M0 0 H32 M16 0 V52"/></g><g class="lg-d" transform="translate(300,22)" fill="none" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"><path d="M0 0 L9 52 L19 16 L29 52 L38 0"/><path transform="translate(52,0)" d="M0 0 V52"/><path transform="translate(68,0)" d="M0 52 V0 L30 52 V0"/><path transform="translate(112,0)" d="M0 0 H10 C44 0 44 52 10 52 H0 Z"/></g></svg></a>
+  <div class="kicker">Build guide</div>
+  <h1>Building a WattWind</h1>
+  <p class="lead">Everything for builders: the parts, the 3D-printed box, every build step, firmware updates,
+  and how the board and its mains circuit are designed. What it does is on the <a href="index.html">main page</a>.</p>
+  <div class="warn">
+    <p><strong>Mains voltage.</strong> Read <a href="index.html#safety">Safety</a> before you start, and work on the
+    fan and the box only unplugged.</p>
+  </div>
+  <nav class="toc" aria-label="Contents">
+    <a href="#build">Building one</a>
+    <a href="#update">Updating</a>
+    <a href="#bom">Parts</a>
+    <a href="#enclosure">Enclosure</a>
+    <a href="#api">API</a>
+    <a href="#hood">Under the hood</a>
+    <a href="#board">Board</a>
+    <a href="#mains">Mains circuit</a>
+    <a href="features.html">All features</a>
+    <a href="index.html">← Main page</a>
+  </nav>
+</header>
+
+<section id="build">
+  <h2>Building one</h2>
+  <p>Read <a href="index.html#safety">Safety</a> first. Stages 1–4 use USB power only, with no mains anywhere near the board;
+  mains comes only in the optional test after stage 4 and in stage 6.</p>
+
+  <h3>What you need</h3>
+  <ul>
+    <li>The parts from <a href="#bom">Parts</a>, and the project files from the <a href="https://github.com/wattwind/wattwind">project's GitHub page</a>: the
+      repository (<b>Code → Download ZIP</b>, then unpack it), and from its <b><a href="https://github.com/wattwind/wattwind/releases/latest">Releases page</a></b> the ready-made files
+      of the latest release: the MicroPython file with its licence texts, the PCB's Gerber ZIP, the box's print
+      files and the firmware update file. (They are built from the repository's sources for each release, so they
+      aren't in the ZIP.)</li>
+    <li>Soldering iron, flush cutters, multimeter, wire strippers; a ferrule crimper if you use screw terminals.</li>
+    <li>3D printer with flame-retardant (V-0) filament, and a soldering-iron tip for heat-set inserts.</li>
+    <li>A computer and a micro-USB cable that carries data (some phone charging cables don't).</li>
+  </ul>
+  <div class="note"><b>Which Pico?</b> A <b>Raspberry Pi Pico 2 W</b>; easiest is the <b>Pico 2 WH</b>, with headers
+  fitted. The older Pico W fits the same board but is not tested or supported (it has much less memory).</div>
+
+  <h3>1. The board</h3>
+  <ol>
+    <li><b>Order the PCB.</b> At any online PCB maker (JLCPCB, PCBWay, Aisler, …) upload the Gerber ZIP from the
+      <a href="https://github.com/wattwind/wattwind/releases/latest">Releases page</a> (the manufacturing files every PCB service accepts) and keep the default options: 2 layers, 1.6 mm, 1 oz
+      copper, any colour. At 65 × 82 mm the board is in the cheapest size class (up to 100 × 100 mm): five
+      boards usually cost a few euros plus shipping and arrive in one to two weeks. You get bare boards; the
+      parts come from the <a href="#bom">parts list</a>.</li>
+    <li>Solder the low parts first, then U1, the relays, terminals, fuse holder, PS1, and finally the Pico.
+      Fit the fuse for your fan: <b>T1A</b> up to about 100 W, <b>T2A</b> up to 185 W (at 120 V: half those wattages; see
+      <a href="index.html#fit">Is it for you?</a>).</li>
+    <li><b>Trim every lead to 3 mm or less under the board</b>: the enclosure standoffs are only 4.5 mm.</li>
+    <li>Clean off the flux, especially between the relay contact pads.</li>
+  </ol>
+  <div class="grid2">
+    <figure>
+      <img src="img/photo-board.jpg" alt="The finished relay board at an angle: two green terminal blocks on the left, the fuse and the black Mean Well power module at the top, four black Finder relays, the driver chip and the Pico 2 W on the right" width="1200" height="1200" loading="lazy">
+      <figcaption>A finished board, Pico 2 W soldered on.</figcaption>
+    </figure>
+    <figure>
+      <img src="img/photo-board-top.jpg" alt="The finished relay board from above: terminals at the top, four relays on the left, the fuse and power module on the right, the Pico 2 W along the bottom" width="1200" height="1200" loading="lazy">
+      <figcaption>From above, oriented as in the enclosure (fan terminals at the top).</figcaption>
+    </figure>
+  </div>
+
+  <h3>2. MicroPython on the Pico</h3>
+  <ol>
+    <li>Hold the white <b>BOOTSEL</b> button on the Pico and plug the USB cable into the computer, then let go.
+      A drive called <b>RP2350</b> appears.</li>
+    <li>Copy the firmware image <code>RPI_PICO2_W-v1.29.0-wattwind-ble3.uf2</code> (from the <a href="https://github.com/wattwind/wattwind/releases/latest">Releases page</a>)
+      onto that drive. The Pico restarts by itself and the drive disappears. That's all: MicroPython is installed.
+      (Use this file, not the one from micropython.org: <a href="#micropython">why</a>.)</li>
+  </ol>
+
+  <h3>3. The fan's program, and a relay test</h3>
+  <ol>
+    <li>Install <b>Thonny</b> from thonny.org and open it. In the bottom-right corner, choose
+      <b>MicroPython (Raspberry Pi Pico)</b>. Then <b>View → Files</b>: the top half shows your computer, the
+      bottom half the Pico.</li>
+    <li>In the top half, open the project's <code>firmware</code> folder. Select everything in it
+      <b>except <code>main.py</code>, the <code>tests</code> folder, <code>README.md</code> and <code>pytest.ini</code></b>
+      (<code>main.py</code> comes last, below; the other three are for developers, not needed on the Pico), right-click and choose
+      <b>Upload to /</b>.</li>
+    <li><b>Relay test</b> (fuse fitted, nothing on J1 or J2): double-click <code>relay_test.py</code> in the
+      bottom half and press the green <b>Run</b> button.
+      <ul>
+        <li><b>Part 1</b> runs by itself: the relays click through every level and it prints <b>PASS</b>. That
+          checks the program and the Pico's pins only (a Pico on its own would pass too), so <b>listen</b>:
+          every step must click.</li>
+        <li><b>Part 2</b> checks the board itself with a multimeter on the continuity (beep) setting. It holds
+          each level and tells you which terminals must beep, for example at level 2: J1 B to J2 COM, and J1 A to
+          J2 MED, while HIGH and LOW stay silent. Press Enter for the next step.</li>
+        <li>A missing click or a wrong beep: check the soldering around that relay, U1 and the fuse.</li>
+      </ul></li>
+    <li>Now upload <code>main.py</code> the same way, close Thonny, and unplug the USB cable. From now on the
+      fan's program starts by itself whenever the board gets power. Later, once the page is up, the
+      line at the bottom of Settings should say <i>files: ok</i>: every file arrived complete (the fan checks them
+      against the list in <code>manifest.json</code> when it starts).</li>
+  </ol>
+
+  <h3>4. The box</h3>
+  <ol>
+    <li>Print the base and the lid: the print files are on the <a href="https://github.com/wattwind/wattwind/releases/latest">Releases page</a>, one set that fits both a
+    soldered Pico and one in sockets. For other inserts or no labels, generate them yourself (see <a href="#enclosure">Enclosure</a>). A box of your
+      own works too, if it meets the points in <a href="#own-box">Your own box</a>.</li>
+    <li>Melt in the seven inserts (four in the lid's bosses, three in the board standoffs), fit the M16 gland, screw the board onto its standoffs with <b>nylon</b> M3 screws
+      and nylon washers. Near mains copper a metal screw head would come closer than the board's creepage distances
+      allow, and a nylon screw that ever works loose can't bridge anything if it drops inside the box. No
+      threadlocker: it can crack many plastics, and it isn't needed here.</li>
+    <li>The lid goes on after the wiring (step 5). It fits either way round and is held by four <b>M3 × 25</b>
+      screws from <b>underneath</b>, up through the base's corner columns into the lid's inserts.</li>
+  </ol>
+  <div class="grid2">
+    <figure>
+      <img src="img/photo-box-inserts.jpg" alt="The printed base, empty: brass heat-set inserts in the three board standoffs, the support post for the Pico, the four screw columns in the corners, and the cable gland with its lock nut at the top" width="1200" height="1200" loading="lazy">
+      <figcaption>The printed base: inserts in the three board standoffs, the gland and its lock nut fitted.</figcaption>
+    </figure>
+    <figure>
+      <img src="img/photo-box-wired.jpg" alt="The base with the relay board screwed in and the six-core cable coming in through the gland, its cores looped to the terminals" width="1200" height="1200" loading="lazy">
+      <figcaption>The board in, and the fan cable wired to J1 and J2 (step 5).</figcaption>
+    </figure>
+  </div>
+
+  <h3>Optional: a mains test before the fan</h3>
+  <p>If you have a spare mains cord with a plug, connect only its L and N to J1, close the box and plug it into
+  an RCD-protected socket. The relays should click when you press 1, 2 and 3 on the page (stage 6 explains how
+  to open it), and nothing should smell or get warm. Unplug, open the box and remove the cord. This catches a
+  build mistake before a motor is attached.</p>
+
+  <h3 id="cable">Connecting the fan</h3>
+  <p>First, how a typical 3-speed fan is wired from the factory. The cord's N goes straight to the motor's
+  common wire (COM); L goes to the speed switch, which connects it to one of three speed wires (LOW, MED,
+  HIGH) on the motor's tapped winding. The earth goes to the fan's metal parts.</p>
+  <div class="diagram" role="img" aria-label="Factory wiring: the cord's L goes to the speed switch, whose positions 1, 2 and 3 connect it to the motor's LOW, MED and HIGH wires; position 0 is off. The cord's N goes directly to the motor's COM wire. PE goes to the fan frame. A capacitor, if fitted, is connected to the motor.">
+    <svg viewBox="0 0 760 300" xmlns="http://www.w3.org/2000/svg">
+      <rect class="box" x="10" y="62" width="46" height="76" rx="6"/>
+      <text x="10" y="52" class="muted">socket</text>
+      <path class="ln" d="M56 80 H160"/><text x="66" y="74">L</text>
+      <path class="ln" d="M56 100 H160"/><text x="66" y="94">N</text>
+      <path class="ln" d="M56 120 H160"/><text x="66" y="114">PE</text>
+      <rect x="160" y="30" width="590" height="260" rx="10" class="ln" stroke-dasharray="6 4"/>
+      <text x="174" y="52">FAN, AS FROM THE FACTORY</text>
+      <circle class="dot" cx="160" cy="80" r="3"/><circle class="dot" cx="160" cy="100" r="3"/><circle class="dot" cx="160" cy="120" r="3"/>
+      <!-- earth -->
+      <path class="ln" d="M160 120 H190 V140"/>
+      <path class="ln" d="M178 140 H202 M182 145 H198 M186 150 H194"/>
+      <text x="168" y="174" class="muted">PE on</text>
+      <text x="168" y="190" class="muted">the frame</text>
+      <!-- L to the speed switch -->
+      <path class="ln" d="M160 80 H340"/>
+      <circle class="dot" cx="340" cy="80" r="4"/>
+      <path class="ln" d="M340 80 L396 117"/>
+      <circle cx="400" cy="80" r="4" class="ln"/><text x="412" y="85" class="muted">0 off</text>
+      <circle cx="400" cy="120" r="4" class="ln"/><text x="384" y="140" class="muted">1</text>
+      <circle cx="400" cy="160" r="4" class="ln"/><text x="384" y="180" class="muted">2</text>
+      <circle cx="400" cy="200" r="4" class="ln"/><text x="384" y="220" class="muted">3</text>
+      <text x="300" y="250" class="muted">speed switch</text>
+      <text x="300" y="266" class="muted">(set to 1 here)</text>
+      <path class="ln" d="M404 120 H600"/><text x="480" y="114">LOW</text>
+      <path class="ln" d="M404 160 H600"/><text x="480" y="154">MED</text>
+      <path class="ln" d="M404 200 H600"/><text x="480" y="194">HIGH</text>
+      <!-- N straight to COM -->
+      <path class="ln" d="M160 100 H260 V240 H600"/><text x="480" y="234">COM</text>
+      <!-- motor and capacitor -->
+      <rect class="box" x="600" y="104" width="60" height="150" rx="6"/>
+      <text x="606" y="184">motor</text>
+      <path class="ln" d="M660 140 H688 M688 128 V152 M696 128 V152 M696 140 H720 V220 H660"/>
+      <text x="668" y="248" class="muted">capacitor</text>
+      <text x="668" y="264" class="muted">(if any)</text>
+    </svg>
+  </div>
+  <p>WattWind replaces only the speed switch. The cord's L and N now go to the box, which does the switching
+  with relays, and four wires come back to the motor:</p>
+  <div class="diagram" role="img" aria-label="Wiring: the wall socket feeds the fan's own cord (L, N, PE). Inside the fan, PE stays on the fan's frame. L and N continue through a 6-core cable to J1 in the box; J2 in the box feeds COM, HIGH, MED and LOW back through the same cable to the motor. The fan's speed switch is removed; its capacitor stays.">
+    <svg viewBox="0 0 760 350" xmlns="http://www.w3.org/2000/svg">
+      <!-- wall socket and the fan's own cord -->
+      <rect class="box" x="10" y="62" width="46" height="76" rx="6"/>
+      <text x="10" y="52" class="muted">socket</text>
+      <path class="ln" d="M56 80 H160"/><text x="66" y="74">L</text>
+      <path class="ln" d="M56 100 H160"/><text x="66" y="94">N</text>
+      <path class="ln" d="M56 120 H160"/><text x="66" y="114">PE</text>
+      <text x="10" y="162" class="muted">fan's own</text>
+      <text x="10" y="178" class="muted">cord + plug</text>
+      <!-- the fan -->
+      <rect x="160" y="30" width="250" height="310" rx="10" class="ln" stroke-dasharray="6 4"/>
+      <text x="174" y="52">FAN</text>
+      <circle class="dot" cx="160" cy="80" r="3"/><circle class="dot" cx="160" cy="100" r="3"/><circle class="dot" cx="160" cy="120" r="3"/>
+      <path class="ln" d="M160 120 H196 V134"/>
+      <path class="ln" d="M184 134 H208 M188 139 H204 M192 144 H200"/>
+      <text x="216" y="138" class="muted">PE on the frame,</text>
+      <text x="216" y="154" class="muted">as from the factory</text>
+      <path class="ln" d="M160 80 H450"/>
+      <path class="ln" d="M160 100 H450"/>
+      <circle cx="230" cy="262" r="22" class="ln"/><text x="226" y="267">M</text>
+      <path class="ln" d="M230 240 V190 H450"/>
+      <path class="ln" d="M252 254 H300 V210 H450"/>
+      <path class="ln" d="M252 262 H320 V230 H450"/>
+      <path class="ln" d="M252 270 H340 V250 H450"/>
+      <text x="350" y="185">COM</text>
+      <text x="350" y="205">HIGH</text>
+      <text x="350" y="225">MED</text>
+      <text x="350" y="245">LOW</text>
+      <text x="174" y="310" class="muted">motor; capacitor stays,</text>
+      <text x="174" y="327" class="muted">speed switch removed</text>
+      <!-- the 6-core cable -->
+      <rect x="450" y="66" width="120" height="198" rx="12" class="box" fill-opacity="0.6"/>
+      <path class="ln" d="M450 80 H570 M450 100 H570 M450 190 H570 M450 210 H570 M450 230 H570 M450 250 H570"/>
+      <text x="440" y="290" class="muted">one 6-core cable</text>
+      <text x="440" y="307" class="muted">300/500 V</text>
+      <text x="440" y="324" class="muted">no earth core</text>
+      <text x="440" y="341" class="muted">M16 gland at box</text>
+      <!-- the WattWind box -->
+      <rect x="590" y="30" width="160" height="310" rx="10" class="ln" stroke-dasharray="6 4"/>
+      <text x="602" y="52">WATTWIND BOX</text>
+      <path class="ln" d="M570 80 H610 M570 100 H610 M570 190 H610 M570 210 H610 M570 230 H610 M570 250 H610"/>
+      <rect class="box" x="610" y="68" width="74" height="44" rx="4"/>
+      <text x="618" y="85">A</text><text x="618" y="105">B</text><text x="694" y="95">J1</text>
+      <rect class="box" x="610" y="176" width="74" height="88" rx="4"/>
+      <text x="616" y="195">1 COM</text><text x="616" y="215">2 HIGH</text><text x="616" y="235">3 MED</text><text x="616" y="255">4 LOW</text>
+      <text x="694" y="225">J2</text>
+      <text x="602" y="310" class="muted">no earth</text>
+      <text x="602" y="327" class="muted">in the box</text>
+    </svg>
+  </div>
+  <p><b>L and N to J1 A and B:</b> with a plug that fits either way round (most of continental Europe: Schuko
+  and the French / Belgian plug), nobody knows which wire is live, and that's fine: the board is built for
+  it. Both wires are switched when the fan is off, and the fuse is in wire A. If your plug only fits one way
+  (UK, US, Switzerland, Denmark, …) and the live wire is known, prefer <b>L (live) → J1 A</b>, so the fuse and
+  the speed relays sit in the live wire, and <b>N → J1 B</b>. Cord colours: brown = L and blue = N in Europe
+  (with a reversible plug brown is not always the live one); black = hot and white = neutral in the US.
+  Inside the fan, join the cord's L and N to the cable with a terminal block or lever connectors where the
+  speed switch used to be.</p>
+  <h3>5. Wiring the fan</h3>
+  <ol>
+    <li><b>Unplug the fan.</b> Open the housing where its speed switch is.</li>
+    <li><b>Before disconnecting anything, take a photo and label every wire</b> with tape. The switch has one
+      supply wire in (from the cord) and one wire per speed out to the motor: position 1 is usually LOW. The
+      motor's remaining wire, the one that went to the cord's other conductor, is <b>COM</b>.</li>
+    <li>Not sure? With the fan unplugged, measure resistance from COM to each speed wire: it is usually
+      highest to LOW and lowest to HIGH.</li>
+    <li>Remove the switch. <b>Leave the capacitor (if any) and the earth wire exactly as they were.</b></li>
+    <li><b>Other parts fed by the switch</b> (a light, an oscillation motor, a timer): they must keep their
+      supply. Connect them to the cord's L and N, as they were before the switch. If you can't tell how they
+      are wired, don't convert that fan.</li>
+    <li>Run the 6-core cable from the fan to the box as in <a href="#cable">Connecting the fan</a>: the cord's
+      L and N to J1, the motor's COM, HIGH, MED, LOW to J2. Insulate every joint inside the fan (terminal block
+      or lever connectors), and note which numbered core went where.</li>
+    <li><b>Where the cable leaves the fan</b>, use a grommet or cable gland in the housing and a strain relief
+      (a cable clamp, or the one the switch's wires used) so a tug never reaches the joints and no sharp edge
+      touches the cable. If the cable goes through the old switch hole, see <a href="#cable-entry">Cable entry: an
+      example</a> below.</li>
+    <li>Ferrules on every stranded wire for screw terminals (never tin the ends), or WAGO spring terminals.
+      Pull-test each wire. Tighten the gland, close the box and the fan housing.</li>
+  </ol>
+
+  <h3 id="cable-entry">Cable entry: an example</h3>
+  <p>How the author's fan does it, as an idea for yours. The fan has a double-D switch hole (9.7 × 12 mm) in a
+  1.2 mm metal housing, and the cable goes through it without drilling: outside, a printed adapter keyed into the
+  hole holds a standard M16 gland, which stops the cable being pushed in; inside, a printed split clamp with two M3
+  screws stops it being pulled out, and stands only 13 mm above the wall. <b>Every fan's hole, wall and inside room
+  are different</b>, so adapt the parts to your fan, or use a grommet or gland of your own. The Fusion script in
+  <code>hardware/enclosure/fan-cable-entry</code> is parametric (hole size, wall thickness, gland size, …), and its
+  README has print orientation, fitting and two other versions (a second gland inside instead of the clamp, and
+  printed threads).</p>
+  <figure>
+    <img src="img/cable-entry-clamp.png" alt="The printed parts on a piece of the fan wall: the split clamp with two M3 screws above the wall, the outer adapter for the gland below it" width="1500" height="1000" loading="lazy">
+    <figcaption>The two parts on a piece of the fan wall (transparent); the inside of the fan is at the top.</figcaption>
+  </figure>
+  <div class="grid2">
+    <figure>
+      <img src="img/photo-cable-entry-outside.jpg" alt="The fan's chrome motor housing from behind: the grey cable leaves through a white M16 gland on the printed outer adapter in the old switch hole" width="1200" height="1200" loading="lazy">
+      <figcaption>Outside: the outer adapter and its gland in the old switch hole.</figcaption>
+    </figure>
+    <figure>
+      <img src="img/photo-cable-entry-inside.jpg" alt="Inside the housing: the printed split clamp with two screws holds the cable at the hole, its cores running down to the motor" width="1200" height="1200" loading="lazy">
+      <figcaption>Inside: the split clamp holds the cable, so a pull never reaches the joints.</figcaption>
+    </figure>
+  </div>
+  <figure>
+    <img src="img/photo-fan-wiring.jpg" alt="Inside the author's fan after the change: the motor at the back of the guard, the speed switch gone, the joints made in orange lever connectors" width="1500" height="1125" loading="lazy">
+    <figcaption>Inside the author's fan after the change, the joints in lever connectors. One fan's wiring, not a
+    pattern for yours: follow the steps in <i>5. Wiring the fan</i>.</figcaption>
+  </figure>
+
+  <h3>6. First start and setup</h3>
+  <ol>
+    <li>Plug the fan into an RCD-protected socket. The fan stays off, and within a few seconds the network
+      <b>WattWind-XXXX</b> appears.</li>
+    <li>Join it with your phone (password <code>wattwind</code>), open <code>http://192.168.4.1</code>. Press
+      1, 2 and 3 to check each speed. If the speeds come in the wrong order, unplug and swap the speed wires
+      on J2. <b>If a level hums, starts slowly or doesn't spin, unplug at once</b>: COM is most likely on a
+      speed wire. Check the wiring against your photos before trying again.</li>
+    <li>The page asks once for your own access point password and a settings PIN (the <b>Set up your fan</b>
+      card; the settings stay locked until then). Then Settings: enter your FTP and heart-rate range. Under Wi-Fi and address, enter your home network and tap <b>Test Wi-Fi</b>: note the address it shows, then
+      <b>Save and switch</b>.</li>
+    <li>Wear the strap, start pedaling: the fan connects to the first heart-rate and power sensors it finds and
+      remembers them. Press <b>Auto</b>, and ride.</li>
+  </ol>
+  <p>The fan's own <b>?</b> page explains every setting; the same <a href="help.html">user manual</a> is on
+  this site. Firmware updates: see <a href="#update">Updating the firmware later</a>.</p>
+  <h3 id="update">Updating the firmware later</h3>
+  <p><b>From the page (no USB, the box stays closed):</b> download the update file
+  <code>wattwind-update-X.Y.Z.tar</code> from the <a href="https://github.com/wattwind/wattwind/releases/latest">project's releases</a>, open the fan's page, Settings →
+  Maintenance → <b>Firmware update</b>, pick the file and press <b>Install</b>. The fan first checks the file's
+  <b>signature</b>: it installs only updates signed with the release key of the firmware it runs, so nobody on your
+  network can slip it other firmware. Then it turns off, receives the files, checks every one against the
+  release's file list, and only then puts them in place and restarts with the new version. A dropped connection or a damaged file changes nothing. Your settings stay. A power cut while the files
+  are being put in place is safe too: the next start finishes the job.</p>
+  <p><b>Knowing when there is one:</b> <b>Check for updates</b> in the same place asks GitHub (from your phone, not
+  the fan) whether a newer version exists, and links to it. To be told by email instead, choose <b>Watch → Custom →
+  Releases</b> on the <a href="https://github.com/wattwind/wattwind">project's GitHub page</a>. If you publish your own firmware, set <code>REPO</code> in
+  <code>firmware/www/index.html</code> to your account and repository, so the button checks your releases.</p>
+  <p><b>With USB</b> (the first install, a new MicroPython, switching to another maker's firmware, or if the page
+  can't be reached):</p>
+  <ol>
+    <li><b>Unplug the fan from mains</b>, take the box off the fan stand, undo the four screws underneath and lift off the lid, undo the board's three screws and lift it
+      as far as its wires allow, so the USB cable fits into the Pico (there is no room next to the wall). With
+      <code>UsbOpening</code> = 1: just pull out the USB plug.</li>
+    <li>Open Thonny. Connecting stops the fan's program: the Pico switches the relays off and restarts in
+      <b>update mode</b> (nothing runs, so it can't restart halfway through copying). If Thonny says the
+      connection was lost, click the red <b>Stop</b> button; the shell then shows <i>UPDATE MODE</i>.</li>
+    <li>Upload everything in the new <code>firmware</code> folder except the <code>tests</code> folder, as in
+      stage 3, <code>main.py</code> included. Your settings (<code>config.json</code> on the fan) stay.</li>
+    <li>Unplug the USB cable, screw the board back in, put the lid on (four screws from underneath), strap the box back on and plug the fan in: it starts normally. At the bottom
+      of Settings the new version shows, with <i>files: ok</i>.</li>
+  </ol>
+  <h3 id="usb">USB and update mode</h3>
+  <ul>
+    <li><b>Plugging in USB changes nothing</b>: the fan keeps running, the cable is just extra power and a serial
+      port. What stops the program is a <b>Ctrl-C</b> over that port, and Thonny, <code>mpremote</code> and
+      MicroPico (VS Code) all send one when they connect.</li>
+    <li><b>Update mode</b>: after that Ctrl-C the fan switches the relays off and restarts with nothing running (no
+      fan program, no Wi-Fi, no watchdog), only MicroPython's prompt, so files can be copied calmly. The tool
+      usually loses the connection at that restart: connect again.</li>
+    <li><b>Back to normal</b>: a real power-up (unplug and plug in again; with USB <i>and</i> mains connected, both
+      must be off at the same time), or from the computer:
+      <code>mpremote exec "import os,machine; os.remove('update_mode.txt'); machine.reset()"</code>.
+      The fan's page says why it restarted: <i>end of update mode</i>.</li>
+    <li><b>Watching the running fan</b> without stopping it: a plain serial terminal at 115200 baud, for example
+      <code>python -m serial.tools.miniterm COM4 115200</code> (pyserial), PuTTY or a serial monitor. It shows a
+      status line every second in Auto (<code>t=… P=… HR=… dem=… lvl=…</code>) and the Wi-Fi and Bluetooth
+      messages. Keys: <code>0</code>–<code>3</code> a level, <code>a</code> Auto, <code>s</code> status.
+      <b>Don't press Ctrl-C</b> there: that is update mode again.</li>
+    <li><b>MicroPico in VS Code</b> connects by itself when the folder opens, which stops the fan. Set
+      <code>"micropico.autoConnect": false</code> in the workspace settings and connect by hand when copying.</li>
+  </ul>
+
+  <h3 id="own-firmware">Your own firmware (forks and changes)</h3>
+  <p>Only for changing the firmware (a fork, your own tweak); for installing releases, the steps above are
+  all you need. Every firmware folder carries a file list,
+  <code>firmware/manifest.json</code>, with a SHA-256 checksum of each file. The fan checks its files against it at
+  every start (<i>files: ok</i> at the bottom of Settings), and the update from the page uses it to send only changed
+  files and to check them before anything is replaced. Updates over Wi-Fi must also be <b>signed</b>: the fan
+  carries a public key (<code>firmware/release_key.py</code>), and only an update signed with the matching private
+  key is installed. Your own firmware needs your own key, once:</p>
+  <ol>
+    <li><code>python tools/make_keys.py</code> (on Windows, type <code>py</code> instead of <code>python</code> if
+      <code>python</code> isn't found or opens the Microsoft Store; the same for every command below): makes a key pair. The private key goes to a folder outside the
+      project that you name in <code>tools/signing_key_path.txt</code> (git-ignored); back it up once and never share
+      it. The public key goes into <code>firmware/release_key.py</code>. Install that firmware over USB once: from
+      then on your fans take your updates over Wi-Fi (and only yours).</li>
+  </ol>
+  <p id="signing-key"><b>Your signing key</b></p>
+  <ul>
+    <li><b>Keep it:</b> it is one small file. Back it up once (a USB stick in a drawer, or a password manager), and never
+      put it in git, a shared folder or a zip for others: whoever has it can sign updates your fans accept.</li>
+    <li><b>Lost it:</b> your fans keep working; only Wi-Fi updates stop. Make a new key pair, build the firmware with the
+      new public key and install it over USB once; from then on updates go over Wi-Fi again.</li>
+    <li><b>Leaked it</b> (or you're unsure): the same, a new key pair and one USB install (move the old key file away first: <code>make_keys.py</code> never overwrites a key). The old key is then worthless
+      to anyone, because your fans no longer trust it.</li>
+    <li><b>Switching between makers</b> (from the official firmware to a fork, to your own, or back): each firmware
+      accepts only updates signed by its own maker, so the switch is one USB install; after that, that maker's
+      updates come over Wi-Fi. USB always works: it is the owner's way in, and needs the box opened.</li>
+  </ul>
+  <p>Then, after changing anything:</p>
+  <ol>
+    <li>Bump the version in <code>firmware/version.py</code> (the page and the logbook then show which build runs).</li>
+    <li><code>python tools/make_manifest.py</code>: writes the new <code>manifest.json</code> (needs Python 3 on the PC,
+      nothing else).</li>
+    <li>Either copy the changed files by USB (as in stage 3, <code>manifest.json</code> included), or run
+      <code>python tools/make_update.py</code>: it packs the files and the manifest into
+      <code>dist/wattwind-update-X.Y.Z.tar</code> and signs it (<code>manifest.sig</code>) for Settings → Maintenance →
+      Firmware update.</li>
+  </ol>
+  <p>Without step 2 the fan still runs, but shows <i>files: changed …</i>, and the page refuses an update file whose
+  files don't match its list. How the firmware works inside: <code>firmware/README.md</code>.</p>
+  <p><b>Test versions</b>, to try a fix with someone before releasing it: start from the release (a branch from its
+  tag), set the coming version plus <code>-test.N</code> in <code>version.py</code> (for example
+  <code>1.0.1-test.1</code>, then <code>-test.2</code> …) and build the update file as above; it is signed with the
+  same key. Share it on the issue or as a GitHub <i>pre-release</i>. The page shows <i>Test version</i> while one
+  runs. When the fix is confirmed, release <code>1.0.1</code>: a version with a dash counts as older than the plain
+  number (<a href="https://semver.org">semver.org</a>), so the release installs as a normal update.</p>
+</section>
+
+<section id="bom">
+  <h2>Parts</h2>
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>Ref</th><th>Part</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>A1</td><td>Raspberry Pi Pico 2 W (Pico 2 WH: headers fitted)</td><td>soldered onto the board; see <a href="#build">Which Pico?</a></td></tr>
+        <tr><td>K0–K3</td><td>Finder 34.51.7.005.0010</td><td>SPDT, 6 A 250 VAC, 5 V sensitive coil (170 mW). Must be the changeover version: the interlock needs the NC contact</td></tr>
+        <tr><td>U1</td><td>Toshiba TBD62003APG</td><td>7-channel DMOS sink driver, DIP-16</td></tr>
+        <tr><td>PS1</td><td>Mean Well IRM-02-5</td><td>5 V 400 mA, 85–264 VAC input</td></tr>
+        <tr><td>F1</td><td>5×20 mm PCB fuse holder + T1A (or T2A) 250 V ceramic slow-blow</td><td>see <a href="index.html#fans">fan limits</a></td></tr>
+        <tr><td>D1</td><td>1N5819</td><td>Schottky, PS1 → VSYS</td></tr>
+        <tr><td>J1</td><td>Phoenix Contact MKDS 1,5/2-5,08 (1715721)</td><td>mains in; any 2-pole 5.0 or 5.08 mm terminal fits (e.g. Phoenix PT 1,5, WAGO 236-102 or 250-502)</td></tr>
+        <tr><td>J2</td><td>Phoenix Contact MKDS 1,5/4-5,08 (1715747)</td><td>fan out: 1 COM, 2 HIGH, 3 MED, 4 LOW; any 4-pole 5.0 or 5.08 mm terminal fits (e.g. WAGO 236-104 or 250-504)</td></tr>
+        <tr><td>C1, C4</td><td>100 µF ≥ 16 V electrolytic</td><td>VSYS bulk</td></tr>
+        <tr><td>C2, C3, C5</td><td>100 nF 50 V X7R</td><td>decoupling</td></tr>
+        <tr><td>—</td><td>M16 × 1.5 cable gland, 6-core 0.75 mm² flexible power cable rated 300/500 V from the fan to the box (not a LiYY-type control cable), M3 heat-set inserts (4 × M3 × 5.7, 3 × M3 × 3), M3 screws (4 × 25 mm steel, socket or pan head, for the lid, from underneath; 3 × 5–6 mm <b>nylon</b> with nylon washers for the board); see
+          <a href="#inserts">Heat-set inserts</a>. Where the cable leaves the fan: whatever suits your fan's hole, wall
+          and room inside (a grommet, a cable gland, or the printed <a href="#cable-entry">cable-entry
+          parts, as an example</a>)</td><td>enclosure, fan</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <h3 id="cost">What it costs</h3>
+  <p>About <b>€70–80 for one fan</b> (prices checked October 2026, single quantities, without tools and the fan
+  itself). The four relays are almost half of it, about €34; the Pico 2 WH about €11, the power module about €5,
+  the PCB a few euros for five boards plus shipping, and everything else a few euros together. Prices change: the
+  full list with sources is in <code>hardware/docs/prices.md</code>.</p>
+</section>
+
+<section id="enclosure">
+  <h2>Enclosure</h2>
+  <p>A 3D-printed two-part box, generated by a parametric Fusion 360 Python script: change a number,
+  re-run, and the whole box rebuilds, then checks itself for collisions against the board's real 3D
+  model.</p>
+  <div class="grid2">
+    <figure>
+      <img src="img/enclosure-open.png" alt="Open enclosure with the relay board inside, a round gland hole in the top wall, screw columns in the corners and cable-tie lugs on the sides" width="1500" height="1000" loading="lazy">
+      <figcaption>Base with the board: cable bay and M16 gland at the top, closed side walls, a screw column in each corner.</figcaption>
+    </figure>
+    <figure>
+      <img src="img/enclosure-closed.png" alt="Closed enclosure: a plain lid with the engraved WattWind symbol and name, no screws on top, rounded corners and the cable-tie lugs" width="1500" height="1000" loading="lazy">
+      <figcaption>Closed: 87.5 × 117.5 × 33.4 mm, no screws on top.</figcaption>
+    </figure>
+  </div>
+  <div class="grid2">
+    <figure>
+      <img src="img/enclosure-bottom.png" alt="The box from underneath: four screw heads in counterbores at the corners and the engraved rating plate: WattWind, 230 V 50 Hz, max 100 W, fuse T1A, Unplug before opening, Mains voltage inside" width="1500" height="1000" loading="lazy">
+      <figcaption>Underneath: the four lid screws in counterbores, and the rating plate.</figcaption>
+    </figure>
+    <figure>
+      <img src="img/photo-box-mounted.jpg" alt="The back of the box on the fan's chrome pole, held by two black cable ties through the lugs, just above the round base" width="1200" height="1200" loading="lazy">
+      <figcaption>On the fan, from behind: two cable ties through the lugs, around the stand's pole.</figcaption>
+    </figure>
+  </div>
+  <ul>
+    <li><b>One cable in:</b> The fan keeps its own mains cord and plug, with its earth (PE) connected inside the fan as from the
+      factory. One 6-core cable runs from the fan to the box: L and N from the fan's cord to J1, and COM, LOW,
+      MED, HIGH back from J2 to the motor. Nothing in the plastic box is earthed, so no earth wire goes to it.
+      The cable enters through a single M16 gland into a cable bay above the terminals.
+      Use a flexible <b>power</b> cable with 0.75 mm² cores rated <b>300/500 V</b> (printed on the jacket), for example
+      Lapp ÖLFLEX CLASSIC 110 <b>6 X</b> 0.75 or a YSLY-OZ 6 × 0.75. Control and data cables such as LiYY are made for
+      signals, often rated only 300/300 V or less, and are not meant for mains power, even with 0.75 mm² cores.
+      Best is a cable <i>without</i> the green-and-yellow striped earth core ("X" or "OZ" = without it, "G" or "JZ" =
+      with one). Plain green or plain yellow cores are fine. With a 7G cable, connect the green-and-yellow core to the fan's earth at
+      the fan end and leave it insulated in the box (end cap or a Wago); never use it for anything else. Check
+      that the cable's diameter is in the gland's clamping range. The gland sits high
+      enough for any M16 lock nut (up to 25.4 mm across the corners) to turn inside, and the lid's lip is notched
+      above it.</li>
+    <li><b>Lid</b> with a locating lip (it fits either way round) and the engraved WattWind symbol and name. Four
+      M3 × 25 screws come from <b>underneath</b>, through columns in the base corners into heat-set inserts in bosses
+      under the lid, their heads in counterbores. Nothing to unscrew on top: to open it you need a screwdriver and have to take
+      the box off the fan, as a cover over mains parts should.</li>
+    <li><b>Sturdy:</b> 3 mm walls, floor and lid, rounded corners, and the screw columns merged into the walls.</li>
+    <li><b>Labels:</b> the rating and warning are engraved on the <b>underside of the base</b>
+      (both optional; see Labels below).</li>
+    <li><b>Board</b> on three 4.5 mm standoffs with M3 × 3 inserts, plus a support post under the Pico.</li>
+    <li><b>No USB opening</b> (default): a closed box with nothing a child can poke into. Firmware updates go over
+      Wi-Fi; for the rare USB job (a new MicroPython, another firmware) the lid and the board come off. <code>UsbOpening</code> = 1
+      adds an opening for the Pico's USB, closed by a press-fit printed plug with grip ribs and a pull tab: notches in
+      the back of its edges leave a slot for a small screwdriver or a coin to twist it out; its fit is adjustable
+      (<code>PlugClearance</code>).</li>
+    <li><b>Cable-tie lugs</b> (6 mm thick, for ties up to 8.5 mm wide) to strap the box to the fan stand: two ties around the pole (photo above).</li>
+    <li>Fillets and chamfers everywhere that matters for strength and printability (elephant's-foot chamfer on the bottom edge).</li>
+  </ul>
+  <p><b>No Fusion?</b> Each release also has ready-made files built with the default settings, one set for a Pico
+  soldered on or in 8.5 mm sockets: base and lid as <b>3MF / STL</b> (to print) and <b>STEP</b> (for any CAD), and
+  the whole design as a Fusion archive (<b>.f3d</b>, with its timeline and user parameters).</p>
+  <h3 id="inserts">Heat-set inserts</h3>
+  <p>The box is drawn for M3 heat-set inserts that need a <b>4.0 mm hole</b>, for example CNC Kitchen's M3
+  standard and short inserts (4.6 mm outside diameter). Each hole is 1 mm deeper than its insert, for the
+  plastic the insert pushes ahead of it.</p>
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>Where</th><th>Qty</th><th>Insert</th><th>Hole (Ø × depth)</th><th>Screw</th></tr></thead>
+      <tbody>
+        <tr><td>Lid bosses</td><td>4</td><td>M3 × 5.7</td><td>4.0 × 6.7 mm</td><td>M3 × 25, socket or pan head, from underneath</td></tr>
+        <tr><td>Board standoffs</td><td>3</td><td>M3 × 3</td><td>4.0 × 4.0 mm</td><td>M3 × 5 (× 6 with the washer), <b>nylon</b>, with nylon washers</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Other inserts work too: set <code>LidInsertHole</code> and <code>BoardInsertHole</code> to the hole their maker recommends, and
+  <code>LidInsertDepth</code> / <code>BoardInsertDepth</code> to their length + 1 mm, then <b>run the script again</b>
+  (user parameters in Fusion, see below). The standoffs grow with the hole, keeping 1.7 mm of plastic
+  around it. Example: generic inserts with a 5 mm outside diameter, M3 × 6 in the lid and M3 × 3 in the
+  standoffs: both holes 4.4 mm, <code>LidInsertDepth</code> 7 mm, <code>BoardInsertDepth</code> 4 mm.
+  The board inserts can be at most about 5 mm long (the standoffs are 4.5 mm), and holes above about 5 mm
+  don't fit next to the wall; the script stops with a message if a value doesn't fit.</p>
+  <h3>Generating it in Fusion 360</h3>
+  <p>The box is not a fixed model: a Python script (<code>hardware/enclosure/WattWindEnclosureV2/WattWindEnclosureV2.py</code>)
+  builds it from the numbers at the top of the file. Change a number, run it again, and every part follows.</p>
+  <ol>
+    <li>In Fusion 360, start a <b>new, empty design</b>. The script deletes the timeline of the open design
+      and rebuilds everything, so don't run it in a design you want to keep.</li>
+    <li><b>Utilities → Add-Ins → Scripts and Add-Ins</b>. On the Scripts tab click <b>+</b> and pick the
+      folder <code>hardware/enclosure/WattWindEnclosureV2</code> (only the first time).</li>
+    <li>Select <b>WattWindEnclosureV2</b> and click <b>Run</b>. After a short while you get the components
+      <b>Bottom</b> (the base), <b>Top</b> (the lid, with the engraved label), <b>Board</b> (and <b>USB plug</b>
+      with <code>UsbOpening</code> = 1)
+      (Board: a PCB placeholder, a parts keep-out and the board's real 3D model from
+      <code>hardware/production/wattwind.step</code>), and a "built" message. The first user parameter, <code>AAA_RunScriptAfterChanges</code>, is only a reminder:
+      after changing any parameter, run the script again.</li>
+    <li>Check the fit in the <b>Text Commands</b> panel: every "interference … volume" and
+      "board STEP models … overlap" line should be 0. With the USB opening, the "USB plug vs base" line shows a small overlap:
+      that is the plug's friction ribs pressing 0.15 mm, which is intended (at <code>PlugClearance</code> 0.2 they just touch).</li>
+    <li>Right-click the components <b>Bottom</b> and <b>Top</b> (and <b>USB plug</b>, if any) → <b>Save as Mesh</b> (3MF or
+      STL). Print the bottom floor-down and the top top-down.</li>
+  </ol>
+  <p><b>Labels.</b> The lid is engraved 0.6 mm deep with just the WattWind symbol and name. The rating and the
+  warning (the mains voltage, the maximum fan power that goes with it and the fuse: at 230 V 100 W with T1A or 185 W with T2A, at 120 V 50 W or 95 W; the fuse; "Unplug before opening") go on the <b>underside</b> of the base, like
+  a rating plate, mirrored in the model so they read right side up when you turn the box over. Both parts print
+  with that face on the bed, so the engraving is in the first layers. For a plain lid or underside, right-click
+  the timeline group <b>Lid label</b> or <b>Base label</b> → <b>Suppress</b>, or set the user parameter
+  <code>LidLabel</code> / <code>BaseLabel</code> to 0 and <b>run the script again</b>. The rating plate follows two user
+  parameters: <code>FuseAmps</code> (the fuse) and <code>MainsVolts</code> (230 or 120 V), which together set the
+  voltage, frequency and maximum fan power; the texts are at the top of the script (below).</p>
+  <div class="note">Print it in a flame-retardant (UL94 V-0) filament if you can get one; ordinary PLA, PETG and ASA
+  are all only HB rated. It is a mains enclosure.
+  <p style="margin:8px 0 0">UL94 is the standard flammability test for plastics. <b>HB</b> (horizontal burn) is the
+  lowest class: the plastic burns slowly but does not put itself out. <b>V-0</b> means it goes out within 10 s
+  with no burning drips. Almost every common filament (PLA, PETG, ABS, ASA, TPU) is HB or not rated at all.
+  Look for one sold as FR-ABS, FR-PC or FR-PETG, check that its datasheet gives V-0 at about 2–3 mm
+  (the walls are 3 mm), and print the walls solid.</p></div>
+  <p><b>Changing a setting.</b> The main settings are stored in the design itself: <b>Modify → Change
+  Parameters</b>, section <b>User Parameters</b>. The first run creates them with the defaults below. Each
+  design keeps its own values, so you can have one design per build. The comment next to each parameter shows
+  its default; to get a default back, delete the parameter and run the script again. The script file itself
+  never changes.</p>
+  <div class="note"><b>After changing a parameter, run the script again, in the same design</b>
+  (<b>Utilities → Add-Ins → Scripts and Add-Ins → WattWindEnclosureV2 → Run</b>). Changing the value alone does
+  nothing to the box.<br>
+  <b>Why:</b> the box is not drawn from the parameters directly. The script reads them and then calculates the
+  shapes, because many sizes depend on each other (the standoffs follow the insert hole, the box height follows
+  the Pico and the leads, the labels are laid out to fit). It also checks the result, for example that an insert
+  hole can't go through the floor or a standoff reach the wall, and those checks only run in the script.
+  (The fan cable-entry adapters are different: there the parts follow a parameter change at once.)</div>
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>User parameter</th><th>Default</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td><code>PicoSocketHeight</code></td><td>0 mm</td><td>Pico soldered directly; change only for sockets (below)</td></tr>
+        <tr><td><code>LeadTrim</code></td><td>3 mm</td><td>How short you cut the leads under the board; the standoffs follow, leaving 1.5 mm below the leads</td></tr>
+        <tr><td><code>GlandNutAcrossCorners</code></td><td>25.4 mm</td><td>The cable gland's lock nut (inside the box), measured across the corners. M16 nuts are 19 to 22 mm across the flats; 25.4 fits the largest. It sets how high the gland sits, so the nut can turn against the wall</td></tr>
+        <tr><td><code>LidInsertHole</code></td><td>4 mm</td><td>Hole for the lid's M3 heat-set inserts (see <a href="#inserts">Heat-set inserts</a>)</td></tr>
+        <tr><td><code>BoardInsertHole</code></td><td>4 mm</td><td>Hole for the board standoffs' M3 heat-set inserts; the standoffs grow with it</td></tr>
+        <tr><td><code>LidInsertDepth</code></td><td>6.7 mm</td><td>Hole depth in the lid bosses: insert length + 1 mm</td></tr>
+        <tr><td><code>BoardInsertDepth</code></td><td>4 mm</td><td>Hole depth in the board standoffs: insert length + 1 mm</td></tr>
+        <tr><td><code>ClearanceLeft</code>, <code>ClearanceBottom</code>, <code>ClearanceRight</code></td><td>7.5, 7.5, 9 mm</td><td>Board edge to the inside walls: left and the Pico edge (room for the corner columns), and the right (room for J1's wires and the USB plug side)</td></tr>
+        <tr><td><code>UsbOpening</code></td><td>0</td><td>0 = closed wall (default); 1 = an opening for the Pico's USB with a press-fit plug</td></tr>
+        <tr><td><code>PlugClearance</code></td><td>0.05 mm</td><td>Only with <code>UsbOpening</code> = 1: the USB plug's gap per side, chosen in a printed fit test. If it is too tight, try 0.1 mm; if it falls out, 0. Printers differ, so adjust after the first print</td></tr>
+        <tr><td><code>LidLabel</code></td><td>1</td><td>1 = WattWind symbol and name engraved on the lid, 0 = plain lid</td></tr>
+        <tr><td><code>BaseLabel</code></td><td>1</td><td>1 = rating and warning engraved on the underside, 0 = none</td></tr>
+        <tr><td><code>FuseAmps</code></td><td>1</td><td>The fuse you fit, shown on the label: 1 = T1A (fans up to about 100 W, most floor fans), 2 = T2A (up to 185 W); at 120 V half those</td></tr>
+        <tr><td><code>MainsVolts</code></td><td>230</td><td>Mains on the label: 230 (50 Hz) or 120 (60 Hz, untested). The label's maximum fan power follows it and <code>FuseAmps</code></td></tr>
+        <tr><td><code>BoardModel</code></td><td>1</td><td>1 = load the board's 3D model for the fit check, 0 = skip it (faster)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>The labels' text and letter sizes (<code>LABEL_LINES</code>, <code>BASE_LABEL_LINES</code>), the symbol's height (<code>LABEL_LOGO</code>, 0 = none) and the defaults for a new design are at the top
+  of the script itself. To edit it, select <b>WattWindEnclosureV2</b> in Scripts and Add-Ins and click <b>Edit</b>:
+  Fusion opens it in Visual Studio Code (and offers to install it). Any plain-text editor works too, such as
+  Notepad or TextEdit, on <code>hardware/enclosure/WattWindEnclosureV2/WattWindEnclosureV2.py</code>. In a design
+  that already has the user parameters, those win over the script's defaults.</p>
+  <h3>If you put the Pico in sockets</h3>
+  <p>The enclosure is made for the Pico soldered onto the board on its pin headers. If you use 1×20 female
+  header sockets instead (so the Pico can be pulled out), it sits higher by the height of the sockets'
+  plastic body, and the USB connector with it. Measure that height from the board surface to the top of
+  a socket (8.5 mm is the common part), set the user parameter <code>PicoSocketHeight</code> to it and run the
+  script again.</p>
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th></th><th>Soldered (default)</th><th>8.5 mm sockets</th></tr></thead>
+      <tbody>
+        <tr><td><code>PicoSocketHeight</code></td><td><code>0</code></td><td><code>8.5 mm</code></td></tr>
+        <tr><td>Box height, closed</td><td>33.4 mm</td><td>33.4 mm (34.7 mm with <code>UsbOpening</code> = 1)</td></tr>
+        <tr><td>USB opening, if any (centre above the outside bottom)</td><td>13.9 mm</td><td>22.4 mm</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Without the USB opening the box stays the same, so the release's print files fit both. With it, the box grows 1.3 mm, because the raised opening and its
+  plug's pull tab have to stay below the lid's locating lip. In the board's 3D model the script lifts the
+  Pico by that height and adds the two sockets under it, so the fit check covers the raised Pico too.</p>
+
+  <h3 id="own-box">Your own box</h3>
+  <p>The printed box is one way to house the board. If you design your own or use a bought junction box, it has to
+  do everything the printed one does. The easiest way to get a different size is often to change the script's user
+  parameters (above) and let it check the fit.</p>
+  <p><b>Must have</b></p>
+  <ul>
+    <li><b>Plastic, not metal.</b> The board keeps its mains copper 3 mm from the board edge, which is enough next
+      to plastic but not next to metal (that would need 8 mm). The board has no earth, and a metal box would also
+      block the Wi-Fi and Bluetooth.</li>
+    <li><b>Flame-retardant.</b> UL94 V-0 (see the note above). For a bought box, look for UL94 V-0 or a glow-wire
+      rating (IEC 60695-2-11) in its datasheet; many polycarbonate junction boxes have one.</li>
+    <li><b>Closed.</b> No opening except the cable entry, and nothing a 1 mm wire could get through (the IP4X
+      test). No vents needed: the board makes only about 1 W of heat.</li>
+    <li><b>A lid that needs a tool:</b> screws, not a snap-on lid or thumb screws.</li>
+    <li><b>Strain relief</b> where the cable enters: a gland whose clamping range fits your cable, tightened, so a pull
+      or a twist on the cable never reaches the terminals. Leave the cores a little slack inside.</li>
+    <li><b>Board mounting.</b> The board is 65 × 82 mm, with three 3.2 mm holes. With the terminals at the top, they are
+      at 4 mm from the left and top edges, at 44 mm from the left and 4 mm from the top, and at 4 mm from the left and
+      78 mm from the top. The fourth corner (the Pico's USB end) has no hole: support the board there with a post
+      under the Pico, about 58.5 mm from the left and 70 mm from the top, where the underside has no pads.
+      Use <b>nylon</b> screws and washers (see step 4), and standoffs at least 1.5 mm taller than the trimmed leads
+      (4.5 mm with the leads cut to 3 mm).</li>
+    <li><b>Height.</b> Parts reach up to about 18 mm above the board's underside: the terminals, depending on their
+      make, with the relays and the power module at about 16.7 mm. Leave at least 1 mm to the lid, more above J1 and J2
+      for the wires.</li>
+    <li><b>Room for the wires.</b> J2's wires come in from the top edge and J1's from the right edge (its 45° entry
+      faces the right wall). The printed box leaves 22 mm above the board for the gland, its nut and the wire loops,
+      and 9 mm on the right. Nothing may press on the terminals or the relays when the lid is closed.</li>
+    <li><b>Mains wires stay on the mains half.</b> The silkscreen line marks the boundary: route the cable's cores
+      along the top and tie them (to each other, or to a point in the box) so that a core that comes loose can't
+      reach the Pico side.</li>
+    <li><b>Labels</b> on the outside: the mains voltage, the maximum fan power and the fuse, "Unplug before opening"
+      and "Mains voltage inside".</li>
+  </ul>
+  <p><b>Recommended</b></p>
+  <ul>
+    <li><b>Keep metal away from the Pico's antenna end</b> (the board's bottom-left corner, about 10 mm from the left
+      edge). A box strapped to a chrome pole works on the author's fan, but don't put the box inside a metal base or
+      behind a metal plate.</li>
+    <li><b>Plan for USB:</b> the Pico's USB faces the right edge. Either leave enough wire length to lift the board out,
+      or add an opening with a plug, as the script's <code>UsbOpening</code> does. Never connect USB with mains
+      plugged in.</li>
+    <li><b>Lid screws into brass inserts</b> (or a box with metal threads) rather than straight into plastic, if you
+      will open it more than a few times.</li>
+    <li><b>Where it goes:</b> firmly on the fan stand, clear of the blades, out of direct sun and away from heaters (the
+      page warns when the Pico's chip reaches 70 °C), and where sweat and drinks don't land. Route the cable so the
+      fan's tilt and oscillation never pull on it.</li>
+  </ul>
+</section>
+
+<section id="api">
+  <h2>The fan's API</h2>
+  <p>Everything the page does goes through a small JSON API on the fan, so phone shortcuts, a voice assistant or
+  Home Assistant can use it too (phone examples in the <a href="help.html#shortcuts">manual</a>, Home Assistant
+  below).</p>
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>Method</th><th>Path</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td>GET</td><td><code>/api/status</code></td><td>mode, level, HR, power, cadence, scores, demand, sensor, heart-rate sharing and Wi-Fi state, firmware version and diagnostics</td></tr>
+        <tr><td>POST</td><td><code>/api/mode</code></td><td><code>{"mode":"auto"}</code> (optional <code>"nudge":-2..2</code>) or <code>{"mode":"manual","level":0-3}</code></td></tr>
+        <tr><td>GET / POST</td><td><code>/api/config</code></td><td>read and update settings</td></tr>
+        <tr><td>POST</td><td><code>/api/update/start</code>, <code>/file</code>, <code>/finish</code></td><td>firmware update from the page: the signed manifest (Ed25519) and sizes, then the changed files in 4 KB pieces, then check and restart</td></tr>
+        <tr><td>POST / GET</td><td><code>/api/wifi/test</code></td><td>from the access point: join a network and report the IP it gets (nothing saved)</td></tr>
+        <tr><td>POST</td><td><code>/api/wifi</code></td><td>save SSID and password, then reboot</td></tr>
+        <tr><td>GET</td><td><code>/api/diagnostics</code></td><td>one text file for analysing a problem: status, settings without passwords, flash, memory, Wi-Fi, files and both logbooks (settings PIN in <code>X-Pin</code>)</td></tr>
+        <tr><td>POST</td><td><code>/api/backup</code>, <code>/api/restore</code></td><td>settings as a backup file (<code>"secrets": true</code> adds passwords and keys); restore checks every value, saves and restarts</td></tr>
+        <tr><td>POST</td><td><code>/api/reboot</code></td><td>fan off, hard reset</td></tr>
+        <tr><td>POST</td><td><code>/api/setup</code></td><td>first setup: own access point password and settings PIN; until then the routes that change settings answer 409</td></tr>
+        <tr><td>POST</td><td><code>/api/erase</code></td><td>Erase everything: settings, riders, Wi-Fi, PIN, keys and logbook; the fan restarts as new</td></tr>
+        <tr><td>GET</td><td><code>/api/wifi/scan</code></td><td>nearby 2.4 GHz networks (name, signal, password or open), strongest first</td></tr>
+        <tr><td>POST</td><td><code>/api/profile</code></td><td>riders: select, add, rename, delete</td></tr>
+        <tr><td>GET / POST</td><td><code>/api/link</code>, <code>/api/link/pair</code>, <code>/api/link/unpair</code>, <code>/api/follow</code></td><td>linked fans: leaders heard, open pairing, unpair all followers (new key), follow / pair again / stop following</td></tr>
+        <tr><td>POST</td><td><code>/api/reset</code></td><td>back to the defaults: <code>{"what": "rider"}</code> (selected rider's values) or <code>"fan"</code> (timing settings)</td></tr>
+        <tr><td>POST</td><td><code>/api/timer</code></td><td><code>{"minutes": 0-1440}</code>: manual "off in" timer (0 cancels)</td></tr>
+        <tr><td>POST</td><td><code>/api/notice/dismiss</code></td><td>clear the one-time message (e.g. after a PIN reset)</td></tr>
+        <tr><td>GET</td><td><code>/api/scan</code></td><td>nearby BLE sensors, for choosing which ones the fan uses</td></tr>
+        <tr><td>GET / POST</td><td><code>/api/detail</code></td><td>the detailed recording (24 h, for finding a problem): GET downloads it, POST <code>{"action": "start"}</code> / <code>"stop"</code> / <code>"delete"</code> (settings PIN)</td></tr>
+        <tr><td>GET</td><td><code>/api/log</code></td><td>the fan's logbook: starts with reason, a status line every 5 minutes while something changes (30 when quiet), and events (Wi-Fi, sensors, buttons, settings, updates, security) (<code>?old=1</code>: previous file; settings PIN in <code>X-Pin</code>)</td></tr>
+        <tr><td>GET</td><td><code>/help</code></td><td>the user manual</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <h3 id="home-assistant">Home Assistant</h3>
+  <p>Add to <code>configuration.yaml</code> (use the fan's IP address, and reserve it in your router):</p>
+<pre><code>rest_command:
+  wattwind:
+    url: "http://&lt;IP&gt;/api/mode"
+    method: POST
+    content_type: "application/json"
+    payload: '{"mode": "{{ mode }}", "level": {{ level | default(0) }}}'
+
+sensor:
+  - platform: rest
+    name: WattWind level
+    resource: "http://&lt;IP&gt;/api/status"
+    value_template: "{{ value_json.level }}"
+    json_attributes: [mode, power, hr, demand]
+    scan_interval: 10</code></pre>
+  <p>Then call <code>rest_command.wattwind</code> with <code>mode: manual, level: 2</code> (or <code>mode: auto</code>)
+  from a script, an automation or a dashboard button. If <b>Fan buttons need the PIN too</b> is on, add
+  <code>"pin": "1234"</code> (your PIN) to the payload. Phone shortcuts (iPhone, Android) are in the
+  <a href="help.html#shortcuts">manual</a>.</p>
+</section>
+
+<section id="hood">
+  <h2>Under the hood</h2>
+  <p>For developers: <code>firmware/README.md</code> in the repository (all documents: <a href="#docs">below</a>) describes how the firmware is built up (tasks,
+  shared state, watchdog), the relay safety design, the Auto logic, the linked-fans protocol and the firmware update,
+  and how to run the tests.</p>
+  <h3 id="docs">The documents in the repository</h3>
+  <p>Besides this site and the user manual, the repository has these text files, for anyone who wants the details:</p>
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>File</th><th>What's in it</th><th>For</th></tr></thead>
+      <tbody>
+        <tr><td><code>README.md</code></td><td>What WattWind is, the mains warning, where to start</td><td>everyone</td></tr>
+        <tr><td><code>CHANGELOG.md</code></td><td>What changed in each release, and whether builders need to do anything</td><td>everyone</td></tr>
+        <tr><td><code>firmware/README.md</code></td><td>How the firmware works: tasks, relay safety, the Auto logic, linked fans, updates and signing, web security, tests</td><td>developers</td></tr>
+        <tr><td><code>SECURITY-CHECK.md</code></td><td>Every point of the ETSI EN 303 645 security baseline: done, partly, or left out, with the reason</td><td>the curious, reviewers</td></tr>
+        <tr><td><code>SECURITY.md</code></td><td>How to report a security problem</td><td>everyone</td></tr>
+        <tr><td><code>hardware/README.md</code></td><td>The relay board: versions, files, how to make the Gerbers</td><td>builders</td></tr>
+        <tr><td><code>hardware/DESIGN.md</code></td><td>Why the board is the way it is: clearances, relays, terminals, the decisions and their reasons</td><td>designers</td></tr>
+        <tr><td><code>hardware/docs/bom.md</code>, <code>prices.md</code></td><td>Parts list with part numbers, and what one fan costs</td><td>builders</td></tr>
+        <tr><td><code>hardware/docs/netlist.md</code>, <code>placement.md</code></td><td>Every connection, and where each part sits on the board</td><td>designers, repairs</td></tr>
+        <tr><td><code>hardware/enclosure/fan-cable-entry/README.md</code></td><td>The printed cable-entry parts for the fan: sizes, printing, fitting</td><td>builders</td></tr>
+        <tr><td><code>micropython/README.md</code></td><td>The custom MicroPython: what is changed, and how to rebuild it yourself</td><td>developers</td></tr>
+        <tr><td><code>LICENSE</code> files</td><td>Firmware MIT; hardware and mechanical designs (PCB, enclosure, cable-entry and other printed parts, in every published form) CERN-OHL-P v2; site, docs and the project's own images CC BY 4.0; third-party material and the WattWind name and logo not included</td><td>everyone</td></tr>
+        <tr><td><code>micropython/LICENSES</code></td><td>The licences of what is inside the custom MicroPython file (MicroPython, BTstack, cyw43-driver, Pico SDK)</td><td>everyone who passes the file on</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <h3 id="micropython">Why a custom MicroPython</h3>
+  <div class="note">MicroPython 1.29, the current release when this
+  was built, supports only <b>one Bluetooth connection at a time</b> on the Pico 2 W: its Bluetooth stack
+  (BTstack) is compiled with room for a single connection. The fan needs two at once, the heart-rate
+  strap and the trainer. With the standard UF2 from micropython.org the first sensor connects and the
+  second fails (<code>OSError 107</code>).
+  <p style="margin:8px 0 0">So the project comes with its own UF2: MicroPython 1.29, unchanged except for
+  that limit, raised to 3 (strap, trainer, and one app or watch for Share heart rate). It is built from the official source by one
+  script in a Docker container, so you can rebuild it or check exactly what changed. If a later
+  MicroPython release lifts the limit, the standard firmware will do.</p></div>
+  <h3>Sensors and data flow</h3>
+  <div class="flow">
+    <div class="step"><b>Sensors</b><span>Heart-rate strap (BLE 0x180D) and trainer power + cadence (Cycling Power 0x1818, FTMS fallback)</span></div>
+    <div class="arrow">→</div>
+    <div class="step"><b>Pico 2 W</b><span>Filters power and HR, scores them against your FTP and HR range</span></div>
+    <div class="arrow">→</div>
+    <div class="step"><b>Fan level 0–3</b><span>Hysteresis and dwell times so it never flaps between speeds</span></div>
+    <div class="arrow">→</div>
+    <div class="step"><b>Relays</b><span>Energise exactly one speed winding of the fan</span></div>
+  </div>
+  <p>Both sensors are connected at the same time, their addresses are remembered, they reconnect automatically,
+  and data counts as stale after 5 s of silence. With <b>Share heart rate</b> on, the fan is also a heart-rate sensor
+  itself (<code>ble_share.py</code>, Heart Rate service 0x180D, named WattWind-XXXX HR): one app or watch can connect,
+  and gets every notification of the strap unchanged while the strap is worn.</p>
+  <h3>Software and tools</h3>
+  <ul>
+    <li><b>Firmware:</b> MicroPython, <code>asyncio</code> with one task per subsystem sharing one state object;
+      <code>aioble</code> for Bluetooth, Microdot for the web server. 400+ pytest tests on the PC, including
+      whole simulated rides. The real test ride on the main page was also replayed through the Auto code, second by
+      second: the fan's 18 level changes matched it within 2 s.</li>
+    <li><b>Security:</b> compared item by item with ETSI EN 303 645, the consumer-IoT baseline behind the EU and UK
+      rules, as a guide, not a certification (<code>SECURITY-CHECK.md</code> in the repository): own password and PIN
+      at setup, signed updates (Ed25519), encrypted linked-fans messages (AES-128 + HMAC), with the reasons for what is
+      left out on purpose (plain HTTP inside your Wi-Fi's encryption, no secure boot, so builders keep control of
+      their own fan). A hobby project: no promised support or updates.</li>
+    <li><b>MicroPython:</b> 1.29 with the Bluetooth connection limit raised from 1 to 3, built in Docker.</li>
+    <li><b>Hardware:</b> KiCad 10 with custom DRC rules for mains clearances and creepage.</li>
+    <li><b>Enclosure:</b> Fusion 360 Python script.</li>
+    <li>Developed against a Pico-based BLE simulator that advertises heart rate and power, then on the author's
+      own fan, strap and trainer.</li>
+  </ul>
+</section>
+
+<section id="board">
+  <h2>Design details: the relay board</h2>
+  <p>A custom 2-layer PCB (KiCad 10), 65 × 82 mm, all through-hole so it can be hand-soldered. The
+  top half is mains, the bottom half is 5 V, and a dashed line on the silkscreen marks the boundary.</p>
+  <figure class="render">
+    <img src="img/board-3d.png" alt="3D render of the WattWind relay board: four white relays, a Mean Well power module, a fuse holder, two green terminal blocks and a Raspberry Pi Pico W along the bottom edge" width="1600" height="1200" loading="lazy">
+    <figcaption>The relay board, rendered from the KiCad design. Four Finder relays, a Mean Well 5 V module, a fuse and the Pico. The relays are drawn white for clarity (the real Finder relays are black), and the
+    render uses the Pico W model (the Pico 2 W looks the same) soldered onto the board.</figcaption>
+  </figure>
+  <div class="grid2">
+    <figure class="render">
+      <img src="img/board-top.png" alt="Top view of the board: J2 fan terminal and J1 mains terminal at the top, four relays in a row, power module on the right, driver chip and Pico W at the bottom" width="1200" height="1200" loading="lazy">
+      <figcaption>Top: fan terminal J2, mains terminal J1, fuse F1, four relays, power module PS1, driver U1 and the Pico.</figcaption>
+    </figure>
+    <figure class="render">
+      <img src="img/board-bottom.png" alt="Bottom view of the board with silkscreen: a full relay and fan wiring diagram, fan ratings and the hazardous / SELV boundary line" width="1200" height="1200" loading="lazy">
+      <figcaption>Bottom: the full wiring diagram, the fan rules and the mains / SELV boundary are printed on the board itself.</figcaption>
+    </figure>
+  </div>
+  <h3>Low-voltage side</h3>
+  <ul>
+    <li><b>Pico 2 W</b> soldered onto the board on its pin headers. Female header sockets fit too, if you want it
+      removable; the enclosure script then needs adjusting (see <a href="#enclosure">Enclosure</a>).</li>
+    <li><b>Toshiba TBD62003APG</b> relay driver, ULN2003-compatible but DMOS: about 0.2 V drop instead of
+      about 1 V, which leaves the relay coils comfortably above their pull-in voltage. Built-in flyback diodes.</li>
+    <li><b>Mean Well IRM-02-5</b> (5 V, 400 mA, reinforced isolation) feeds the Pico's VSYS through a
+      <b>1N5819 Schottky</b> (~0.3 V drop). The Pico's own diode does the same for USB, so electrically mains and
+      a USB cable can be connected at the same time without the supplies fighting (but see
+      <a href="index.html#safety">Safety</a>: while it's a prototype, unplug mains for USB work).</li>
+    <li>Relay coils run from VSYS, so the whole board can be tested on USB power alone, with no mains
+      connected.</li>
+    <li>Power budget: Pico 2 W ~150 mA + two coils (master + one speed) ~80 mA = ~230 mA.</li>
+  </ul>
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>Relay</th><th>Job</th><th>GPIO</th><th>Pico pin</th><th>Driver channel</th></tr></thead>
+      <tbody>
+        <tr><td>K0</td><td>master, switches mains wire B</td><td>GP11</td><td>15</td><td>IN6 → OUT6</td></tr>
+        <tr><td>K1</td><td>LOW speed</td><td>GP15</td><td>20</td><td>IN1 → OUT1</td></tr>
+        <tr><td>K2</td><td>MEDIUM speed</td><td>GP14</td><td>19</td><td>IN2 → OUT2</td></tr>
+        <tr><td>K3</td><td>HIGH speed</td><td>GP12</td><td>16</td><td>IN5 → OUT5</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>The odd channel choice is deliberate: Pico pins 20, 19, 16, 15 sit straight under driver pins 1, 2, 5, 6,
+  and the driver outputs sit under the relay coils, so every control track is short, straight and
+  crossing-free. Relays are active HIGH, and at power-up the GPIOs are pulled down, so everything starts off.</p>
+</section>
+
+<section id="mains">
+  <h2>The mains circuit</h2>
+  <p>A European plug can go in either way round, so the two mains wires are called A and B rather than
+  live and neutral. The circuit is built so that the fan is cut on <b>both</b> wires when off, and so
+  that two speed windings can never be powered at once, even if the software goes wrong.</p>
+  <div class="diagram" role="img" aria-label="Mains circuit: J1 A goes through fuse F1 into a chain of three changeover relays K3, K2, K1. Each relay's normally-open contact feeds one fan tap (HIGH, MED, LOW); its normally-closed contact feeds the next relay. J1 B goes through master relay K0 to the fan common.">
+    <svg viewBox="0 0 760 320" xmlns="http://www.w3.org/2000/svg">
+      <!-- wire A: fuse, PS1 tap, interlock chain (relays shown off: COM resting on NC) -->
+      <text x="10" y="64">J1 A</text>
+      <path class="ln" d="M52 60 H80"/>
+      <rect class="box" x="80" y="50" width="44" height="20" rx="3"/>
+      <text x="92" y="42">F1</text>
+      <path class="ln" d="M124 60 H210"/>
+      <path class="ln" d="M150 60 V100"/>
+      <text x="124" y="118" class="muted">PS1 (5 V)</text>
+      <g>
+        <circle class="dot" cx="210" cy="60" r="4"/>
+        <path class="ln" d="M210 60 L262 47"/>
+        <circle cx="266" cy="46" r="4" class="ln"/>
+        <circle cx="266" cy="96" r="4" class="ln"/>
+        <text x="196" y="92">K3</text>
+        <text x="274" y="38" class="muted" font-size="11">NC</text>
+        <text x="274" y="110" class="muted" font-size="11">NO</text>
+        <path class="ln" d="M270 46 H330 V60 H350"/>
+      </g>
+      <g>
+        <circle class="dot" cx="350" cy="60" r="4"/>
+        <path class="ln" d="M350 60 L402 47"/>
+        <circle cx="406" cy="46" r="4" class="ln"/>
+        <circle cx="406" cy="96" r="4" class="ln"/>
+        <text x="336" y="92">K2</text>
+        <text x="414" y="38" class="muted" font-size="11">NC</text>
+        <text x="414" y="110" class="muted" font-size="11">NO</text>
+        <path class="ln" d="M410 46 H470 V60 H490"/>
+      </g>
+      <g>
+        <circle class="dot" cx="490" cy="60" r="4"/>
+        <path class="ln" d="M490 60 L542 47"/>
+        <circle cx="546" cy="46" r="4" class="ln"/>
+        <circle cx="546" cy="96" r="4" class="ln"/>
+        <text x="476" y="92">K1</text>
+        <text x="554" y="38" class="muted" font-size="11">NC × unused</text>
+        <text x="554" y="110" class="muted" font-size="11">NO</text>
+      </g>
+      <!-- NO contacts to the fan taps -->
+      <path class="ln" d="M266 100 V214 H600"/>
+      <path class="ln" d="M406 100 V194 H600"/>
+      <path class="ln" d="M546 100 V174 H600"/>
+      <!-- J2 terminal and motor -->
+      <text x="600" y="146">J2</text>
+      <rect class="box" x="600" y="154" width="84" height="104" rx="4"/>
+      <text x="610" y="178">4 LOW</text>
+      <text x="610" y="198">3 MED</text>
+      <text x="610" y="218">2 HIGH</text>
+      <text x="610" y="248">1 COM</text>
+      <path class="ln" d="M684 206 H704"/>
+      <circle cx="724" cy="206" r="18" class="ln"/>
+      <text x="719" y="211">M</text>
+      <text x="710" y="244" class="muted" font-size="11">fan</text>
+      <!-- wire B: master relay -->
+      <text x="10" y="274">J1 B</text>
+      <path class="ln" d="M52 270 H210"/>
+      <circle class="dot" cx="210" cy="270" r="4"/>
+      <path class="ln" d="M210 270 L262 283"/>
+      <circle cx="266" cy="284" r="4" class="ln"/>
+      <circle cx="266" cy="244" r="4" class="ln"/>
+      <text x="196" y="306">K0</text>
+      <text x="274" y="300" class="muted" font-size="11">NC × unused</text>
+      <text x="274" y="236" class="muted" font-size="11">NO</text>
+      <path class="ln" d="M270 244 H600"/>
+    </svg>
+  </div>
+  <p class="muted" style="color:var(--muted);font-size:14px;margin-top:8px">All relays shown off. On = K0 plus exactly one of K1–K3.</p>
+  <ul>
+    <li><b>Interlock chain.</b> Mains A runs through the normally-closed contacts K3 → K2 → K1. Energising K3
+      sends power to HIGH and at the same time cuts it from K2 and K1; K2 cuts K1. Two windings live at once
+      is physically impossible.</li>
+    <li><b>Both wires broken when off.</b> K0 opens wire B; with all speed relays off, wire A dead-ends at K1's
+      unused NC contact. A single-pole relay on each side gives the same isolation as a double-pole switch.</li>
+    <li><b>A failed relay.</b> Relay contacts can weld shut. One stuck relay alone can't run the fan when it is off:
+      K0 and the speed chain break different wires, so two would have to fail. A stuck speed relay shows as a level
+      that doesn't change (the fan keeps that speed); a stuck K0 doesn't show at all until a second fault. If the fan
+      ever runs while the page says Off, unplug it: the board needs repair (replace the relays).</li>
+    <li><b>PS1 is tapped before the relays</b>, so the electronics stay powered with the fan off.</li>
+    <li><b>No earth on the board.</b> The fan's earth stays inside the fan, connected through its own cord as
+      from the factory; the box is plastic and nothing in it is earthed.</li>
+  </ul>
+</section>
+
+</div>
+
+<footer>
+  <div class="wrap">
+    <p>Designed with AI assistance; built, measured and tested by the author.</p>
+    <p>Provided as is, without warranty of any kind. Working with mains voltage is dangerous; follow your local
+    wiring regulations. The author accepts no liability for damage, injury or loss from building or using it.</p>
+    <p>Licenses: firmware MIT; hardware and mechanical designs (the PCB, the enclosure, the cable-entry adapters and
+    other printed parts) CERN-OHL-P v2, in every form they are published in: scripts, Fusion files, STEP and print
+    files; this site, the docs and the project's own photos, renders and drawings CC BY 4.0. Third-party material is
+    not covered: other companies' app icons, logos, product names and screenshots or artwork of their products belong
+    to their owners and are marked where they appear.
+    Included libraries keep their own licenses (Microdot and aioble: MIT). The custom MicroPython file also contains
+    Raspberry Pi's Bluetooth (BTstack) and Wi-Fi (cyw43-driver) drivers, licensed for use with Raspberry Pi chips
+    only; their texts are in <code>micropython/LICENSES</code> and come with the file. The signature check follows
+    the reference code of RFC 8032 (BSD notice in <code>firmware/ed25519.py</code>).</p>
+    <p>The WattWind name and logo aren't covered by these licences. Use them freely on your build, modified or not;
+    if you publish a changed version, just say what you changed, so nobody mistakes it for the original.</p>
+    <p>Garmin, Wahoo, Mean Well, Raspberry Pi, Finder and other names are trademarks of their owners.
+    This project is not affiliated with or endorsed by them.</p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var root = document.documentElement, key = "wattwind-theme";
+  try { var saved = localStorage.getItem(key); if (saved) root.setAttribute("data-theme", saved); } catch (e) {}
+  document.getElementById("themeToggle").addEventListener("click", function () {
+    var dark = root.getAttribute("data-theme") ? root.getAttribute("data-theme") === "dark"
+      : window.matchMedia("(prefers-color-scheme: dark)").matches;
+    var next = dark ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    try { localStorage.setItem(key, next); } catch (e) {}
+  });
+})();
+</script>
+<script>
+(function () {
+  var b = document.getElementById("toTop");
+  function update() { b.classList.toggle("show", window.scrollY > window.innerHeight); }
+  window.addEventListener("scroll", update, { passive: true });
+  update();
+  b.addEventListener("click", function (e) {
+    e.preventDefault();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    if (location.hash) history.replaceState(null, "", location.pathname + location.search);
+  });
+})();
+</script>
+</body>
+</html>

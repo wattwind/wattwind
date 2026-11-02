@@ -1,0 +1,17 @@
+diff --git a/ports/rp2/btstack_inc/btstack_config.h b/ports/rp2/btstack_inc/btstack_config.h
+index ec7cd7f..8322758 100644
+--- a/ports/rp2/btstack_inc/btstack_config.h
++++ b/ports/rp2/btstack_inc/btstack_config.h
+@@ -6,4 +6,12 @@
+ 
+ #include "btstack_config_common.h"
+ 
++// WattWind: BTstack has no malloc here, so these fixed pools cap the number of BLE
++// connections. The stock value 1 allows only one sensor; the fan needs a heart rate
++// strap and a trainer at the same time (3 = both plus one spare).
++#undef MAX_NR_HCI_CONNECTIONS
++#define MAX_NR_HCI_CONNECTIONS 3
++#undef MAX_NR_GATT_CLIENTS
++#define MAX_NR_GATT_CLIENTS 3
++
+ #endif

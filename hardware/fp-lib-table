@@ -1,0 +1,4 @@
+(fp_lib_table
+	(version 7)
+	(lib (name "WattWind")(type "KiCad")(uri "${KIPRJMOD}/WattWind.pretty")(options "")(descr "Project footprints: universal 5.0/5.08 mm terminal blocks; Finder 34.51 with a white 3D model"))
+)

@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="img/wattwind-icon.svg" type="image/svg+xml">
+<title>WattWind: all features</title>
+<meta name="description" content="Everything the WattWind automatic trainer fan does, on one page: Auto mode, sensors, riders, manual control, linked fans, the phone page, Wi-Fi, security, maintenance, safety and the hardware.">
+<style>
+:root {
+  --bg: #f6f7f4;
+  --surface: #ffffff;
+  --surface-2: #eef1ec;
+  --text: #1c211d;
+  --muted: #5b655d;
+  --line: #d9dfd8;
+  --accent: #1f7a4d;
+  --accent-soft: #dcefe4;
+  --code: #eef1ec;
+  --radius: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12161a;
+    --surface: #1a2025;
+    --surface-2: #222a30;
+    --text: #e6ebe7;
+    --muted: #9aa69e;
+    --line: #2e373e;
+    --accent: #4cc38a;
+    --accent-soft: #1d3a2c;
+    --code: #222a30;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12161a;
+  --surface: #1a2025;
+  --surface-2: #222a30;
+  --text: #e6ebe7;
+  --muted: #9aa69e;
+  --line: #2e373e;
+  --accent: #4cc38a;
+  --accent-soft: #1d3a2c;
+  --code: #222a30;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 17px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+.wrap { max-width: 980px; margin: 0 auto; padding: 0 16px; }
+header.hero { padding: 56px 0 24px; }
+.logo { height: 56px; width: auto; display: block; margin: 6px 0 14px; }
+.lg-s { stroke: var(--muted); } .lg-b { fill: var(--accent); } .lg-w { stroke: var(--accent); } .lg-d { stroke: var(--text); }
+.kicker { color: var(--accent); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; font-size: 13px; }
+h1 { font-size: clamp(32px, 6vw, 52px); line-height: 1.1; margin: 8px 0 16px; letter-spacing: -.02em; }
+h2 { font-size: 22px; margin: 0 0 8px; letter-spacing: -.01em; }
+p { margin: 0 0 14px; }
+.lead { font-size: 20px; color: var(--muted); max-width: 720px; }
+a { color: var(--accent); }
+main { padding: 8px 0 40px; border-top: 1px solid var(--line); }
+nav.toc { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+nav.toc a {
+  text-decoration: none; color: var(--text); background: var(--surface);
+  border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; font-size: 14px;
+}
+nav.toc a:hover { border-color: var(--accent); }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 24px; }
+@media (max-width: 720px) { .grid2 { grid-template-columns: 1fr; } }
+.card {
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 18px 20px; scroll-margin-top: 12px;
+}
+.card .more { font-size: 14px; color: var(--muted); margin: 10px 0 0; }
+code { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 14px;
+  background: var(--code); padding: 1px 5px; border-radius: 5px; }
+ul { padding-left: 20px; margin: 0; }
+li { margin: 5px 0; }
+footer { padding: 32px 0 56px; color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); }
+.theme-toggle {
+  position: fixed; top: 12px; right: 12px; background: var(--surface); color: var(--text);
+  border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; font-size: 13px; cursor: pointer;
+}
+.to-top {
+  position: fixed; right: 16px; bottom: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 10;
+  width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  background: var(--surface); color: var(--text); border: 1px solid var(--line); text-decoration: none;
+  font-size: 20px; box-shadow: 0 2px 8px rgba(0,0,0,.15); opacity: 0; visibility: hidden; transition: opacity .2s;
+}
+.to-top.show { opacity: 1; visibility: visible; }
+</style>
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle light or dark theme">Theme</button>
+<a class="to-top" id="toTop" href="#" aria-label="Back to the top">↑</a>
+
+<div class="wrap">
+<header class="hero">
+  <a href="index.html" aria-label="WattWind home"><svg class="logo" viewBox="0 0 456 96" role="img" aria-label="WattWind"><g transform="translate(4,8)"><g class="lg-s" stroke-width="6" stroke-linecap="round"><path d="M4 26 H30"/><path d="M0 42 H24"/><path d="M8 58 H28"/></g><path class="lg-b" d="M58 2 L30 46 H46 L38 78 L72 30 H55 L66 2 Z"/></g><g class="lg-w" transform="translate(100,22)" fill="none" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"><path d="M0 0 L9 52 L19 16 L29 52 L38 0"/><path transform="translate(50,0)" d="M0 52 L16 0 L32 52 M7 34 H25"/><path transform="translate(94,0)" d="M0 0 H32 M16 0 V52"/><path transform="translate(142,0)" d="M0 0 H32 M16 0 V52"/></g><g class="lg-d" transform="translate(300,22)" fill="none" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"><path d="M0 0 L9 52 L19 16 L29 52 L38 0"/><path transform="translate(52,0)" d="M0 0 V52"/><path transform="translate(68,0)" d="M0 52 V0 L30 52 V0"/><path transform="translate(112,0)" d="M0 0 H10 C44 0 44 52 10 52 H0 Z"/></g></svg></a>
+  <div class="kicker">All features</div>
+  <h1>Everything it does</h1>
+  <p class="lead">The whole list on one page, one line each. The <a href="index.html">main page</a> explains the
+  ideas, the <a href="help.html">user manual</a> every setting, the <a href="build.html">build guide</a> the
+  hardware.</p>
+  <nav class="toc" aria-label="Contents">
+    <a href="#auto">Auto</a>
+    <a href="#sensors">Sensors</a>
+    <a href="#riders">Riders</a>
+    <a href="#manual">Ordinary fan</a>
+    <a href="#linked">Linked fans</a>
+    <a href="#page">Phone page</a>
+    <a href="#wifi">Wi-Fi</a>
+    <a href="#security">Security</a>
+    <a href="#maintenance">Maintenance</a>
+    <a href="#shortcuts">Shortcuts</a>
+    <a href="#safety">Fail-safe</a>
+    <a href="#hardware">Hardware</a>
+    <a href="#open">Open</a>
+    <a href="index.html">← Main page</a>
+  </nav>
+</header>
+</div>
+
+<main>
+<div class="wrap">
+<div class="grid2">
+
+  <div class="card" id="auto">
+    <h2>Auto mode</h2>
+    <ul>
+      <li><b>Starts in Auto,</b> fan off, at every power-up: plug it in and ride.</li>
+      <li><b>Power, heart rate or both:</b> follows whichever says you're working harder, or only one of them
+        (<b>Decide by</b>, per rider); a missing one is covered by the other.</li>
+      <li><b>Your own numbers:</b> the steps are set in % of your FTP and heart-rate range, so they fit a strong and a
+        beginner rider alike, and read as training zones.</li>
+      <li><b>Up quickly, down slowly:</b> smoothed power, so a short recovery doesn't switch the fan down.</li>
+      <li><b>No flapping:</b> one level at a time, a gap between the up and down levels, a minimum time at each level.</li>
+      <li><b>Fan response:</b> Calm, Normal or Quick, for how eagerly it follows you.</li>
+      <li><b>Stop pedaling:</b> it holds a minute, then winds down to off; ride on and it carries on.</li>
+      <li><b>Sensor lost:</b> runs on the other one; both lost: holds 2 minutes, then steps down.</li>
+      <li><b>Nudge − / +:</b> up to two levels less or more for this ride; Auto still follows the workout.</li>
+      <li><b>Highest level:</b> keep Auto at 1 or 2 for quiet evenings.</li>
+      <li><b>Idle off:</b> off after 15 minutes (adjustable) without pedaling or sensor data.</li>
+      <li><b>Every threshold and time is a setting,</b> with Reset to defaults.</li>
+    </ul>
+    <p class="more">More: <a href="index.html#auto">Auto mode</a> · <a href="help.html#auto">How Auto decides</a></p>
+  </div>
+
+  <div class="card" id="sensors">
+    <h2>Sensors</h2>
+    <ul>
+      <li><b>Strap and trainer at once</b> over Bluetooth: any heart-rate strap or armband, any trainer or power meter
+        with Cycling Power or FTMS.</li>
+      <li><b>Either one is enough:</b> power only, or heart rate only (rollers, a basic trainer).</li>
+      <li><b>Finds your sensors by itself</b> and remembers them, so it never grabs the strap of the rider next to you.</li>
+      <li><b>Find sensors:</b> a list of what's nearby, pick one; <b>Forget</b> to change.</li>
+      <li><b>Reconnects by itself</b> after a dropout.</li>
+      <li><b>Your training app stays connected</b> to the same sensors (most allow two connections).</li>
+      <li><b>Passes your heart rate on</b> (Share heart rate, off until ticked): for a strap that allows only one
+        connection, the fan sends its heart rate on as a Bluetooth heart-rate sensor of its own,
+        <code>WattWind-XXXX HR</code>, for one app or bike computer.</li>
+      <li><b>Strap taken off:</b> noticed within seconds and shown as "(not worn)", even on straps that keep
+        sending their last value; Auto then goes by power.</li>
+      <li><b>Sensor battery</b> shown, with a warning at 15 % or less.</li>
+    </ul>
+    <p class="more">More: <a href="help.html#sensors">Sensors</a></p>
+  </div>
+
+  <div class="card" id="riders">
+    <h2>Riders</h2>
+    <ul>
+      <li><b>Up to 5 riders,</b> each with their own FTP, heart-rate range, Decide by, fan response, step levels and
+        strap.</li>
+      <li><b>Switches by strap:</b> straps only send while worn, so the fan picks whoever's strap is on, within
+        about 20 seconds.</li>
+      <li><b>Or by hand:</b> a rider chosen in the list stays selected until you choose again.</li>
+    </ul>
+    <p class="more">More: <a href="help.html#settings">Settings → Rider</a></p>
+  </div>
+
+  <div class="card" id="manual">
+    <h2>Also an ordinary fan</h2>
+    <ul>
+      <li><b>Off · 1 · 2 · 3</b> from the page, no sensors needed; the level stays until you change it, also after
+        a ride.</li>
+      <li><b>Off timer:</b> Off in 30 min, 1 h or 2 h, then it stays off.</li>
+      <li><b>Forgotten?</b> After 8 hours in Manual (up to 24, or never) it goes back to Auto, which turns it off
+        when nobody rides.</li>
+      <li><b>Back to Auto mid-ride</b> continues from the current level, no sudden drop.</li>
+    </ul>
+    <p class="more">More: <a href="index.html#manual">Also an ordinary fan</a> · <a href="help.html#buttons">Buttons</a></p>
+  </div>
+
+  <div class="card" id="linked">
+    <h2>Linked fans</h2>
+    <ul>
+      <li><b>Several fans, one ride:</b> any number of WattWinds follow one leader over your home Wi-Fi.</li>
+      <li><b>Each at its own level:</b> same as the leader, one higher, one or two lower, or its own Auto settings
+        from the leader's heart rate and power.</li>
+      <li><b>One remote:</b> the leader's buttons and off timer move every follower that follows its level.</li>
+      <li><b>Sensors stay free:</b> followers don't use Bluetooth at all.</li>
+      <li><b>Leader gone:</b> followers hold a minute, then step down to off.</li>
+      <li><b>Pairing in a minute:</b> Pair a new fan on the leader, Follow on the other; <b>Unpair all followers</b>
+        and <b>Pair again</b> when plans change.</li>
+      <li><b>Encrypted and signed:</b> other devices on your network can't read or fake the messages.</li>
+    </ul>
+    <p class="more">More: <a href="index.html#linked">Linked fans</a> · <a href="help.html#linked">manual</a></p>
+  </div>
+
+  <div class="card" id="page">
+    <h2>The phone page</h2>
+    <ul>
+      <li><b>Served by the fan itself:</b> no app, no account, no internet; light and dark.</li>
+      <li><b>Works on older phones too:</b> plain web code, made for iPhones from about iOS 13 and Android phones
+        with Chrome from about 2019, and current browsers on a computer.</li>
+      <li><b>On the home screen</b> it opens like an app.</li>
+      <li><b>Readable on the handlebars:</b> a big level, the mode, what happens next, live watts, rpm and bpm, the
+        demand and what decided it, sensor dots.</li>
+      <li><b>The fan's name in the header,</b> so with several fans you know which one you're on.</li>
+      <li><b>Warnings when something needs you:</b> a low sensor battery, a hot controller, damaged firmware files,
+        a safe start.</li>
+      <li><b>Never loses your input:</b> unsaved changes are marked, with Save and Undo, and it asks before you leave;
+        a wrong value is marked at its field with what to change.</li>
+      <li><b>Lost contact is shown:</b> values grey out, and after a restart the page finds the fan again by itself.</li>
+      <li><b>Built-in manual</b> behind the <b>?</b>, the same one as on this site.</li>
+    </ul>
+    <p class="more">More: <a href="index.html#ui">The phone page</a> · <a href="help.html#screen">The screen</a></p>
+  </div>
+
+  <div class="card" id="wifi">
+    <h2>Wi-Fi</h2>
+    <ul>
+      <li><b>At <code>http://wattwind.local</code></b> on your home network, with the IP shown for Android; give
+        each fan its own name.</li>
+      <li><b>Its own network</b> <code>WattWind-XXXX</code> when there's no home network, and the page opens by
+        itself when you join it.</li>
+      <li><b>Find networks</b> lists what the fan can use, strongest first.</li>
+      <li><b>Test Wi-Fi</b> before switching: shows the address your router gives it, reports a wrong password at
+        once, saves nothing.</li>
+      <li><b>Router gone</b> (or slow after a power cut): its own network after 2 minutes, then back home by itself.</li>
+      <li><b>Fan control never depends on Wi-Fi.</b></li>
+    </ul>
+    <p class="more">More: <a href="help.html#wifi">Wi-Fi</a></p>
+  </div>
+
+  <div class="card" id="security">
+    <h2>Security and privacy</h2>
+    <ul>
+      <li><b>Your own password and PIN</b> at the first setup: no fan keeps the published default.</li>
+      <li><b>Settings PIN</b> for settings, Wi-Fi, updates, logbook and backups (the fan buttons too, if you like);
+        each device asks once; wrong guesses are slowed down.</li>
+      <li><b>Only official firmware:</b> updates must carry the release's digital signature.</li>
+      <li><b>Websites can't reach it through your browser:</b> it answers only to its own name and address, and takes
+        commands only from its own page.</li>
+      <li><b>Your data stays home:</b> no cloud, no account; the logbook keeps no heart rate or power; the only
+        thing it asks the internet is the time.</li>
+      <li><b>Forgot the PIN?</b> Plug it in and out three times, then a fourth time and leave it: new PIN, everything
+        else kept.</li>
+      <li><b>Erase everything</b> before you give it away.</li>
+      <li><b>Compared with ETSI EN 303 645,</b> the consumer smart-device baseline, as a guide.</li>
+    </ul>
+    <p class="more">More: <a href="index.html#privacy">Security and privacy</a> · <a href="help.html#data">Your data</a></p>
+  </div>
+
+  <div class="card" id="maintenance">
+    <h2>Maintenance and diagnostics</h2>
+    <ul>
+      <li><b>Firmware update over Wi-Fi</b> from the page: signature and every file checked first; if anything fails,
+        nothing changes. The box stays closed.</li>
+      <li><b>Check for updates:</b> one tap asks GitHub from your phone (not the fan) whether there's a newer version;
+        or get an email from GitHub when one comes out.</li>
+      <li><b>Backup and restore</b> of all settings, on this fan or another; passwords only if you choose.</li>
+      <li><b>Logbook:</b> every start and why, every level change with its reason, Wi-Fi and sensor events, errors;
+        about 4½ to 9 days of a busy fan.</li>
+      <li><b>Diagnostics file</b> to download and send when asking for help.</li>
+      <li><b>Detailed recording:</b> every second of a ride for 24 h, for a problem that's hard to catch.</li>
+      <li><b>A line at the bottom of Settings:</b> version, running time, why it last restarted, Wi-Fi signal, chip temperature, sensor
+        batteries.</li>
+      <li><b>Firmware file check</b> at every start.</li>
+      <li><b>Restart</b> from the page.</li>
+    </ul>
+    <p class="more">More: <a href="help.html#settings">Settings → Maintenance</a> · <a href="help.html#trouble">Troubleshooting</a></p>
+  </div>
+
+  <div class="card" id="shortcuts">
+    <h2>Shortcuts and home automation</h2>
+    <ul>
+      <li><b>A simple JSON API:</b> everything the page does, other programs can do too.</li>
+      <li><b>iPhone Shortcuts and Siri:</b> "Fan high" by voice or from the home screen.</li>
+      <li><b>Android:</b> a home-screen button with a free HTTP shortcut app.</li>
+      <li><b>Home Assistant:</b> the fan as a sensor and buttons in a dashboard, ready-made configuration included.</li>
+    </ul>
+    <p class="more">More: <a href="help.html#shortcuts">Shortcuts</a> · <a href="build.html#api">The fan's API</a></p>
+  </div>
+
+  <div class="card" id="safety">
+    <h2>Built to fail safe</h2>
+    <ul>
+      <li><b>Relays off first</b> at every start, before anything else runs.</li>
+      <li><b>Both wires disconnected</b> when the fan is off; one stuck relay alone can't keep it running.</li>
+      <li><b>Never two speeds at once:</b> break-before-make, at most one change per 2 seconds.</li>
+      <li><b>Hardware watchdog:</b> a program that stops responding restarts with the fan off.</li>
+      <li><b>Every part restarts on its own</b> after an error; an error can't leave a relay stuck.</li>
+      <li><b>Settings checked at every start;</b> a bad value goes back to its default.</li>
+      <li><b>Safe start:</b> after three error restarts in a row it starts with default ride settings, so the page
+        stays reachable for a fix.</li>
+    </ul>
+    <p class="more">More: <a href="index.html#safety">Safety</a></p>
+  </div>
+
+  <div class="card" id="hardware">
+    <h2>The hardware</h2>
+    <ul>
+      <li><b>Your own 3-speed fan,</b> up to 100 W (185 W with the bigger fuse); 230 V, 120 V untested.</li>
+      <li><b>One board, 16 through-hole parts,</b> 65 × 82 mm, ordered online from one ZIP file.</li>
+      <li><b>Mains kept apart:</b> 8 mm between mains and low voltage, a fuse, the wiring diagram printed on the back.</li>
+      <li><b>Tested without mains first:</b> the relays click through every level on USB power.</li>
+      <li><b>A printed box</b> made by a script: change a number and it rebuilds and checks its own fit; ready-made
+        print files too.</li>
+      <li><b>Closed and labelled:</b> lid screws from underneath, an engraved rating plate, no USB opening unless you
+        want one.</li>
+      <li><b>Straps to the fan's stand</b> with two cable ties; one cable to the fan.</li>
+      <li><b>Or your own box,</b> with a list of what it needs.</li>
+      <li><b>About €70–80 in parts.</b></li>
+    </ul>
+    <p class="more">More: <a href="build.html">Build guide</a></p>
+  </div>
+
+  <div class="card" id="open">
+    <h2>Open</h2>
+    <ul>
+      <li><b>All of it published:</b> firmware (MIT), board and box (CERN-OHL-P), site and docs (CC BY).</li>
+      <li><b>Change anything:</b> plain MicroPython, a KiCad board, a Fusion script; your own firmware with your own
+        signing key.</li>
+      <li><b>Tested on the computer:</b> 400+ tests, including whole simulated rides and a real ride replayed
+        second by second.</li>
+      <li><b>Measured on a real ride:</b> the same power, heart rate and cadence as a bike computer, under a second
+        later.</li>
+    </ul>
+    <p class="more">More: <a href="build.html#hood">Under the hood</a> · <a href="index.html#tested">Measured</a></p>
+  </div>
+
+</div>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>Designed with AI assistance; built, measured and tested by the author.</p>
+    <p>Provided as is, without warranty of any kind. Working with mains voltage is dangerous; follow your local
+    wiring regulations. The author accepts no liability for damage, injury or loss from building or using it.
+    Licences and trademarks: see the <a href="index.html">main page</a>.</p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var root = document.documentElement, key = "wattwind-theme";
+  try { var saved = localStorage.getItem(key); if (saved) root.setAttribute("data-theme", saved); } catch (e) {}
+  document.getElementById("themeToggle").addEventListener("click", function () {
+    var dark = root.getAttribute("data-theme") ? root.getAttribute("data-theme") === "dark"
+      : window.matchMedia("(prefers-color-scheme: dark)").matches;
+    var next = dark ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    try { localStorage.setItem(key, next); } catch (e) {}
+  });
+})();
+</script>
+<script>
+(function () {
+  var b = document.getElementById("toTop");
+  function update() { b.classList.toggle("show", window.scrollY > window.innerHeight); }
+  window.addEventListener("scroll", update, { passive: true });
+  update();
+  b.addEventListener("click", function (e) {
+    e.preventDefault();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    if (location.hash) history.replaceState(null, "", location.pathname + location.search);
+  });
+})();
+</script>
+</body>
+</html>

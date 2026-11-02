@@ -1,0 +1,779 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="img/wattwind-icon.svg" type="image/svg+xml">
+<title>WattWind: automatic trainer fan</title>
+<meta name="description" content="An automatic trainer fan: your 3-speed floor fan follows your heart rate and power, so the harder you ride, the harder it blows. Open hardware with a Raspberry Pi Pico 2 W.">
+<style>
+:root {
+  --bg: #f6f7f4;
+  --surface: #ffffff;
+  --surface-2: #eef1ec;
+  --text: #1c211d;
+  --muted: #5b655d;
+  --line: #d9dfd8;
+  --accent: #1f7a4d;
+  --accent-soft: #dcefe4;
+  --warn: #b23a1a;
+  --warn-soft: #fbe6de;
+  --render-bg: #20262a;
+  --code: #eef1ec;
+  --radius: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12161a;
+    --surface: #1a2025;
+    --surface-2: #222a30;
+    --text: #e6ebe7;
+    --muted: #9aa69e;
+    --line: #2e373e;
+    --accent: #4cc38a;
+    --accent-soft: #1d3a2c;
+    --warn: #ff8a65;
+    --warn-soft: #3a2119;
+    --render-bg: #0d1013;
+    --code: #222a30;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12161a;
+  --surface: #1a2025;
+  --surface-2: #222a30;
+  --text: #e6ebe7;
+  --muted: #9aa69e;
+  --line: #2e373e;
+  --accent: #4cc38a;
+  --accent-soft: #1d3a2c;
+  --warn: #ff8a65;
+  --warn-soft: #3a2119;
+  --render-bg: #0d1013;
+  --code: #222a30;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 17px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+.wrap { max-width: 980px; margin: 0 auto; padding: 0 16px; }
+header.hero { padding: 56px 0 24px; }
+.logo { height: 56px; width: auto; display: block; margin: 6px 0 14px; }
+.lg-s { stroke: var(--muted); } .lg-b { fill: var(--accent); } .lg-w { stroke: var(--accent); } .lg-d { stroke: var(--text); }
+.kicker { color: var(--accent); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; font-size: 13px; }
+h1 { font-size: clamp(32px, 6vw, 52px); line-height: 1.1; margin: 8px 0 16px; letter-spacing: -.02em; }
+h2 { font-size: 28px; margin: 0 0 12px; letter-spacing: -.01em; }
+h3 { font-size: 19px; margin: 24px 0 8px; }
+p { margin: 0 0 14px; }
+.lead { font-size: 20px; color: var(--muted); max-width: 720px; }
+a { color: var(--accent); }
+section { padding: 40px 0; border-top: 1px solid var(--line); }
+nav.toc { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+nav.toc a {
+  text-decoration: none; color: var(--text); background: var(--surface);
+  border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; font-size: 14px;
+}
+nav.toc a:hover { border-color: var(--accent); }
+figure { margin: 20px 0; }
+figure img { display: block; width: 100%; height: auto; border-radius: var(--radius); }
+figure.render img { background: var(--render-bg); }
+figure.video { max-width: 640px; margin-left: auto; margin-right: auto; }
+figure.video video { display: block; width: 100%; height: auto; border-radius: var(--radius); background: #000; }
+figcaption { color: var(--muted); font-size: 14px; margin-top: 8px; }
+.shots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; align-items: start; margin: 8px 0 18px; }
+.shots img { width: 100%; height: auto; border: 1px solid var(--line); border-radius: 10px; }
+@media (max-width: 720px) { .shots { grid-template-columns: 1fr 1fr; } }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+@media (max-width: 720px) { .grid2, .grid3 { grid-template-columns: 1fr; } }
+.card {
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 18px 20px;
+}
+.card h3 { margin-top: 0; }
+.card p:last-child { margin-bottom: 0; }
+.facts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 24px 0 0; }
+@media (max-width: 720px) { .facts { grid-template-columns: 1fr 1fr; } }
+.fact { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
+.fact b { display: block; font-size: 22px; }
+.fact span { color: var(--muted); font-size: 14px; }
+.table-scroll { overflow-x: auto; margin: 12px 0 20px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 15px; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { background: var(--surface-2); font-weight: 600; white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+code, pre { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 14px; }
+code { background: var(--code); padding: 1px 5px; border-radius: 5px; }
+pre { background: var(--code); padding: 14px 16px; border-radius: var(--radius); overflow-x: auto; margin: 12px 0 20px; }
+pre code { background: none; padding: 0; }
+.warn {
+  background: var(--warn-soft); border: 1px solid var(--warn); border-radius: var(--radius);
+  padding: 16px 20px; margin: 20px 0;
+}
+.warn strong { color: var(--warn); }
+.note { background: var(--accent-soft); border-radius: var(--radius); padding: 14px 18px; margin: 16px 0; }
+ul, ol { padding-left: 22px; margin: 0 0 14px; }
+li { margin: 4px 0; }
+.diagram { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; overflow-x: auto; }
+.diagram svg { display: block; width: 100%; min-width: 560px; height: auto; }
+.diagram svg text { font-family: ui-monospace, Consolas, monospace; font-size: 13px; fill: var(--text); }
+.diagram svg .muted { fill: var(--muted); }
+.diagram svg .ln { stroke: var(--text); stroke-width: 1.6; fill: none; }
+.diagram svg .live { stroke: var(--warn); stroke-width: 2.4; fill: none; }
+.diagram svg .dot { fill: var(--text); }
+.diagram svg .box { stroke: var(--text); stroke-width: 1.4; fill: var(--surface-2); }
+details.more { margin: 14px 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: 10px 16px; }
+details.more > summary { cursor: pointer; font-weight: 600; color: var(--accent); }
+details.more[open] > summary { margin-bottom: 8px; }
+.cta { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 18px; }
+.cta a { display: inline-block; padding: 10px 18px; border-radius: 999px; font-weight: 600; text-decoration: none;
+  background: var(--accent); color: #fff; }
+.cta a.alt { background: var(--surface); color: var(--accent); border: 1px solid var(--accent); }
+.flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: 10px; margin: 16px 0; }
+.flow .step { flex: 1 1 150px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; }
+.flow .step b { display: block; }
+.flow .step span { color: var(--muted); font-size: 14px; }
+.flow .arrow { align-self: center; color: var(--muted); font-size: 20px; }
+@media (max-width: 720px) { .flow .arrow { display: none; } }
+footer { padding: 32px 0 56px; color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); }
+.theme-toggle {
+  position: fixed; top: 12px; right: 12px; background: var(--surface); color: var(--text);
+  border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; font-size: 13px; cursor: pointer;
+}
+.to-top {
+  position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 10;
+  width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  background: var(--surface); color: var(--text); border: 1px solid var(--line); text-decoration: none;
+  font-size: 20px; box-shadow: 0 2px 8px rgba(0,0,0,.15); opacity: 0; visibility: hidden; transition: opacity .2s;
+}
+.to-top.show { opacity: 1; visibility: visible; }
+.hero-photos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; max-width: 480px; margin: 4px 0 8px; }
+.hero-photos img { display: block; width: 100%; height: auto; border-radius: var(--radius); }
+.hero-note { border-left: 3px solid var(--warn); padding: 2px 0 2px 12px; color: var(--muted); max-width: 720px; margin: 18px 0 0; }
+</style>
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle light or dark theme">Theme</button>
+<a class="to-top" id="toTop" href="#" aria-label="Back to the top">↑</a>
+
+<div class="wrap">
+<header class="hero">
+  <svg class="logo" viewBox="0 0 456 96" role="img" aria-label="WattWind"><g transform="translate(4,8)"><g class="lg-s" stroke-width="6" stroke-linecap="round"><path d="M4 26 H30"/><path d="M0 42 H24"/><path d="M8 58 H28"/></g><path class="lg-b" d="M58 2 L30 46 H46 L38 78 L72 30 H55 L66 2 Z"/></g><g class="lg-w" transform="translate(100,22)" fill="none" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"><path d="M0 0 L9 52 L19 16 L29 52 L38 0"/><path transform="translate(50,0)" d="M0 52 L16 0 L32 52 M7 34 H25"/><path transform="translate(94,0)" d="M0 0 H32 M16 0 V52"/><path transform="translate(142,0)" d="M0 0 H32 M16 0 V52"/></g><g class="lg-d" transform="translate(300,22)" fill="none" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"><path d="M0 0 L9 52 L19 16 L29 52 L38 0"/><path transform="translate(52,0)" d="M0 0 V52"/><path transform="translate(68,0)" d="M0 52 V0 L30 52 V0"/><path transform="translate(112,0)" d="M0 0 H10 C44 0 44 52 10 52 H0 Z"/></g></svg>
+  <div class="kicker">For indoor cyclists · works with your own fan · open hardware</div>
+  <h1>A fan that knows how hard you're riding</h1>
+  <p class="lead">Easy spin: a gentle breeze. Threshold intervals: full blast. Stop pedaling: the fan winds
+  down by itself. It listens to the heart-rate strap and smart trainer you already ride with and runs your own
+  3-speed floor fan, so you just plug it in and ride: the fan stays off until you warm up.</p>
+  <div class="cta"><a href="#how">See how it works</a><a class="alt" href="features.html">All features</a><a class="alt" href="help.html">User manual</a><a class="alt" href="build.html">Build guide</a><a class="alt" href="https://github.com/wattwind/wattwind">GitHub</a></div>
+  <figure>
+    <img src="img/how-it-works.svg" alt="How WattWind works: the heart-rate strap and the smart trainer send heart rate and power over Bluetooth to the WattWind box, which works out how hard you are riding and switches your ordinary 3-speed floor fan to the matching level; your phone shows the fan's own web page over Wi-Fi" width="1000" height="530">
+    <figcaption>Your sensors, a small box, and the fan you already have: the box takes over from the fan's speed switch (see <a href="build.html#cable">Connecting the fan</a>). The phone page is optional: it starts in Auto by itself.</figcaption>
+  </figure>
+  <p class="hero-note">You build it yourself: a small board, a printed box, and a cable in place of the fan's speed
+  switch (<a href="#fit">what it takes</a>). It switches mains and is a prototype, not a certified product: read
+  <a href="#safety">Safety</a> before building.</p>
+  <div class="facts">
+    <div class="fact"><b>Auto</b><span>follows your power and heart rate</span></div>
+    <div class="fact"><b>Your fan</b><span>most 3-speed floor and pedestal fans</span></div>
+    <div class="fact"><b>Bluetooth</b><span>your strap and trainer, alongside your training app</span></div>
+    <div class="fact"><b>Phone</b><span>a web page, no app, no cloud</span></div>
+  </div>
+  <nav class="toc" aria-label="Contents">
+    <a href="#how">How it works</a>
+    <a href="#fit">Is it for you?</a>
+    <a href="#auto">Auto</a>
+    <a href="#tested">Measured</a>
+    <a href="#ui">Phone page</a>
+    <a href="#buildit">Build one</a>
+    <a href="#safety">Safety</a>
+    <a href="features.html">All features</a>
+    <a href="help.html">User manual</a>
+    <a href="build.html">Build guide</a>
+    <a href="https://github.com/wattwind/wattwind">GitHub</a>
+  </nav>
+</header>
+
+
+<section id="how">
+  <h2>How it works</h2>
+  <p>A fan in an indoor-training setup usually sits on one speed for the whole ride: too much in the warm-up,
+  not enough in the hard intervals, and still roaring during the cool-down. Getting off the bike to change it
+  breaks the workout, so most riders don't. WattWind changes the speed for you, from what your body is doing.</p>
+  <figure>
+    <img src="img/ride-chart.svg" alt="An interval workout and the fan level Auto picks: off in the first minutes of the warm-up, level 1 then 2 as it builds, level 3 in each hard interval, down to 2 then 1 in the recoveries, stepping down in the cool-down and off a minute after pedaling stops" width="1000" height="400">
+    <figcaption>A 52-minute interval workout run through the fan's own Auto code (default settings, FTP 240 W).
+    The fan comes on in the warm-up, goes to full in every interval, steps down to 2 and then 1 in the
+    3-minute recoveries, and turns off a minute after you stop.</figcaption>
+  </figure>
+  <ul>
+    <li><b>Power, heart rate, or both.</b> It works from your smart trainer or power meter (watts), from your
+      heart-rate strap (bpm), or from both:
+      <ul>
+        <li><b>Power only</b> (no strap): the fan follows your watts.</li>
+        <li><b>Heart rate only</b> (rollers, a basic trainer): the fan follows your bpm.</li>
+        <li><b>Both:</b> it follows whichever says you are working harder, so on a hot day at moderate power a
+          rising heart rate still brings more air. Or choose one of them per rider, even with both connected.</li>
+      </ul></li>
+    <li><b>Your sensors and your app together.</b> It reads the sensors over Bluetooth, and your training app
+      (Zwift, TrainerRoad, …) keeps its own connection (most sensors allow two).</li>
+    <li><b>It doesn't flap.</b> Power is smoothed, so a short recovery or a coast down a virtual hill doesn't switch
+      it down, and it changes one step at a time.</li>
+    <li><b>It remembers your sensors,</b> so it doesn't grab the strap of the rider next to you, and reconnects
+      by itself.</li>
+    <li><b>Your phone is the remote:</b> watch the numbers or take over from the handlebars.</li>
+  </ul>
+  <figure>
+    <div class="hero-photos">
+      <img src="img/photo-fan-stand.jpg" alt="An ordinary chrome 3-speed floor fan on a stand, with the small grey WattWind box strapped low on its pole and a grey cable running up to the fan head" width="1000" height="1502">
+      <img src="img/photo-box-on-fan.jpg" alt="Close-up of the grey WattWind box on the fan's pole, the engraved logo on the lid and the cable gland on top" width="1000" height="1500">
+    </div>
+    <figcaption>On a real fan: one small box on the stand, one cable to the fan.</figcaption>
+  </figure>
+  <div class="card">
+    <h3>Why not buy a smart fan?</h3>
+    <p>Commercial smart fans exist, and they are a good, simple choice if you want one ready-made fan. WattWind is for a different rider:</p>
+    <ul>
+      <li><b>Your own fan, or several.</b> Any ordinary 3-speed floor fan, as big as you like, repairable with
+        standard parts. With linked fans put one in front and one at the side, each at its own level.</li>
+      <li><b>Your training numbers decide:</b> your power against your FTP, your heart rate within your own range,
+        or both, and you choose the step levels yourself, per rider.</li>
+      <li><b>Several riders:</b> up to five, each with their own FTP, heart-rate range, step levels and strap; the fan
+        switches to whoever's strap is being worn.</li>
+      <li><b>Also an ordinary fan:</b> manual levels and an off timer for when you're not riding.</li>
+      <li><b>Open and yours:</b> no app, no account, no cloud; every setting on a web page; the firmware, board and
+        box are open, so you can change any of it.</li>
+      <li><b>Low cost:</b> a handful of standard parts and a printed box, if you have a soldering iron and a 3D
+        printer.</li>
+    </ul>
+    <p>The price is your time and care: it's a DIY build that opens a mains appliance (see <a href="#fit">Is it for
+    you?</a>).</p>
+  </div>
+</section>
+
+<section id="fit">
+  <h2>Is it for you?</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>You need</h3>
+      <ul>
+        <li>A <b>3-speed floor or pedestal fan</b> with an ordinary speed switch (most cheap ones; <a href="#fans">check yours</a>).</li>
+        <li>A <b>smart trainer or power meter</b>, a <b>heart-rate strap</b>, or both, that talk Bluetooth.</li>
+        <li><b>230 V mains</b> (Europe and similar; 120 V is untested, see below).</li>
+        <li>A <b>2.4 GHz home Wi-Fi</b> for the phone page (optional: the fan works without it).</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>What building one takes</h3>
+      <ul>
+        <li><b>About €70–80 in parts</b> for one fan (<a href="build.html#cost">what it costs</a>).</li>
+        <li><b>A PCB ordered online:</b> upload one ZIP file, keep the default options.</li>
+        <li><b>16 through-hole parts to solder</b>, no tiny surface-mount parts.</li>
+        <li><b>A small printed box</b>, ideally in flame-retardant filament (or <a href="build.html#own-box">your own box</a>).</li>
+        <li><b>The fan's speed switch replaced</b> by a cable to the box. That's mains wiring: if it's new to you,
+          ask someone qualified to do or check that part.</li>
+        <li><b>Files copied to the Pico</b> with a free program, step by step in the
+          <a href="build.html#build">build guide</a>.</li>
+      </ul>
+    </div>
+  </div>
+  <p class="note"><b>Not a maker yourself?</b> For someone who solders and has done mains wiring, it's a
+  straightforward build: show them the <a href="build.html">build guide</a>. Every step, part and file is in it.</p>
+  <h3>Sensors</h3>
+  <ul>
+    <li><b>Power:</b> a smart trainer or power meter that sends power over <b>Bluetooth</b> (the Cycling Power
+      service, or FTMS, which most smart trainers use).</li>
+    <li><b>Heart rate:</b> any Bluetooth heart-rate strap or armband (Garmin, Polar, Wahoo, …). Most straps send
+      both ANT+ and Bluetooth; sensors with ANT+ only don't work.</li>
+    <li><b>Either one is enough.</b> Power alone, heart rate alone (rollers, a basic trainer) or both; with both,
+      the fan follows whichever says you're working harder.</li>
+    <li><b>Your training app can stay connected</b> (Zwift, TrainerRoad, …) if the sensor accepts two Bluetooth
+      connections at once; most current straps and trainers do. If one doesn't, connect the app to it over
+      ANT+ instead, or tick <b>Share heart rate</b>: the fan passes the strap's heart rate on to one app or bike
+      computer over Bluetooth (one that connects without pairing; Garmin devices take the strap over ANT+).</li>
+  </ul>
+  <h3>Mains</h3>
+  <p>Designed and tested for <b>230 V, 50 Hz</b> (Europe and similar). 120 V should work but is untested, and it
+  halves the fan power limits.</p>
+  <details class="more">
+  <summary>120 V details</summary>
+  <p><b>120 V, 60 Hz</b> (North America) should work, but is untested. The power module takes 85–264 V, and the
+  relays are the same part sold in the US (UL listed, 6 A 250 V). What changes is the current: the same fan
+  draws about twice as much at 120 V, and the relay contacts care about current, not watts. So at 120 V
+  <b>halve the wattage limits</b>: <b>T1A for fans up to about 50 W, T2A up to about 95 W</b> (most floor
+  fans are 40–60 W). The relay datasheet gives a motor rating only for 230 V, and its UL listing assumes at
+  most 40 °C around it. Set <code>MainsVolts</code> to 120 in the enclosure script: the rating plate on the box then shows 120 V, 60 Hz and
+  the matching fan power.</p>
+  </details>
+  <h3 id="fans">Fans</h3>
+  <p>Most cheap floor and pedestal fans fit: three speeds on a rotary or push-button switch, up to about 100 W
+  (185 W with the bigger fuse). Not for fans with a remote control or a brushless DC motor.</p>
+  <details class="more">
+  <summary>How to tell if your fan fits</summary>
+  <p>Most cheap floor and pedestal fans use a single-phase motor with a <b>tapped winding</b>: one common wire
+  and one wire per speed, switched by a rotary or push-button switch. That's exactly what this board
+  replaces.</p>
+  <ul>
+    <li>Motor type: <b>shaded-pole or PSC</b> (permanent split capacitor), with COM + LOW / MED / HIGH taps.</li>
+    <li>Remove the fan's own speed switch and wire the taps to J2. If there is a run capacitor, keep it wired exactly as it was.</li>
+    <li><b>T1A fuse: fans up to about 100 W.</b> <b>T2A: up to 185 W</b> (at 230 V; at 120 V half that, see Mains). 185 W is the most the relays are rated to switch for a single-phase motor (Finder 34.51: 0.185 kW at 230 V), so it is the board's limit even with a bigger fuse.</li>
+    <li>Not for brushless DC fans with electronic speed control, or fans with remote-control electronics in the base.</li>
+  </ul>
+  </details>
+</section>
+
+<section id="auto">
+  <h2>Auto mode</h2>
+  <p>Plug the fan in and start riding: that's all. Auto is how the fan runs by default.</p>
+  <ul>
+    <li><b>Easy spinning:</b> off, or a gentle breeze. <b>Steady endurance:</b> level 2. <b>Sweet spot and harder:</b>
+      full blast. The steps are set in % of your FTP and heart-rate range, so they mean the same for a strong
+      and a beginner rider (the <a href="help.html#auto">manual</a> shows them in training zones).</li>
+    <li><b>Up quickly, down slowly:</b> more air within seconds when you go hard, and no drop between intervals.</li>
+    <li><b>Stop pedaling:</b> it holds a minute, then winds down to off. Ride on and it carries on.</li>
+    <li><b>Too much or too little today?</b> − and + on the page shift Auto by a level for this ride, and a
+      maximum level keeps evenings quiet.</li>
+    <li><b>Calm, Normal or Quick:</b> one setting for how eagerly it follows you.</li>
+  </ul>
+  <details class="more">
+    <summary>The details: timings, sensor loss, and how the numbers work</summary>
+  <ul>
+    <li><b>Starts in Auto</b> at power-up, fan off. With FTP 240, level 1 comes on about 15 s into a
+      150 W warm-up (or at a heart rate around 119 bpm, with the default rest 60 and max 190).</li>
+    <li><b>One step at a time.</b> Up after at least 15 s at the current level, down after at least 60 s.</li>
+    <li><b>Not pedaling</b> (cadence 0 or under 20 W for 5 s): hold for 60 s (Normal), then one level down per minute.
+      Start pedaling again and it carries on from where it is.</li>
+    <li><b>Sensor loss:</b> lose power and it runs on HR; lose HR and it runs on power; lose both and it
+      holds for 2 minutes, then steps down.</li>
+    <li><b>Nudge:</b> − and + under the buttons give one level less or more than Auto chooses, for this ride (up to
+      two levels): Auto still follows the workout, just with a bit less or more air. A + never switches the fan on
+      while you aren't pedaling; cleared when the ride ends.</li>
+    <li><b>Highest level:</b> a setting caps Auto (and the nudge) at level 1 or 2, for quiet evenings; levels
+      picked by hand are not limited.</li>
+    <li><b>Idle off:</b> in Auto, no pedaling, or no sensor data at all, for 15 minutes (configurable) turns the
+      fan off. With a strap only, pedaling can't be seen: Auto follows heart rate down instead.</li>
+  </ul>
+  <p>Once per second the firmware computes a single <em>demand</em> number from power and heart rate:</p>
+<pre><code>p_ema    = power, EMA: ~12 s when rising, ~75 s when falling
+hr_f     = heart rate, ~5 s EMA
+
+p_score  = p_ema / FTP
+hr_score = (hr_f - hr_rest) / (hr_max - hr_rest)
+demand   = max(p_score, hr_score)</code></pre>
+  <p><b>EMA</b> is an exponential moving average: every second the smoothed value moves a fraction of
+  the way towards the new reading, so a single spike or dropout barely moves it. The time constant is
+  roughly how long it takes to cover two-thirds of a sudden change. Power uses two of them: jump from
+  150 W to 300 W and <code>p_ema</code> is near 245 W after 12 s, but drop back to 150 W and it is still
+  around 250 W half a minute later.</p>
+  <p>Power reacts fast when you go hard and lets go slowly, so the fan doesn't drop between intervals.
+  Heart rate catches the "it's hot and I'm cooked" case where power is moderate but your body isn't.</p>
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>Level</th><th>Step up when demand ≥</th><th>Step down when demand &lt;</th></tr></thead>
+      <tbody>
+        <tr><td>1 (low)</td><td>0.45</td><td>0.38</td></tr>
+        <tr><td>2 (medium)</td><td>0.70</td><td>0.63</td></tr>
+        <tr><td>3 (high)</td><td>0.88</td><td>0.81</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><b>Fan response</b> is one setting that changes how quickly Auto follows you:</p>
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>Response</th><th>Power rising</th><th>Power falling</th><th>Hold after stopping</th></tr></thead>
+      <tbody>
+        <tr><td>Calm</td><td>~20 s</td><td>~120 s</td><td>90 s</td></tr>
+        <tr><td>Normal</td><td>~12 s</td><td>~75 s</td><td>60 s</td></tr>
+        <tr><td>Quick</td><td>~6 s</td><td>~40 s</td><td>30 s</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Thresholds, dwell times, timeouts and the response preset are all settings.</p>
+  </details>
+</section>
+
+<section id="tested">
+  <h2>Same numbers as your bike computer</h2>
+  <p>A 38-minute test ride on a smart trainer in ERG mode, with a chest strap. A bike computer recorded power, heart
+  rate and cadence over ANT+, while WattWind read the same trainer and strap over Bluetooth. Compared second by second,
+  the two recordings match: the fan gets the same numbers as your bike computer, less than a second later.</p>
+  <figure>
+    <img src="img/ride-test.svg" alt="A real 38-minute test ride: the fan's power reading lies on the bike computer's all the way, and the fan level steps up 0, 1, 2, 3 with the workout, is 3 in the hard intervals and 2 in the short rests, goes off about a minute after pedaling stops and comes back when riding resumes, and is at 1 in the cool-down" width="1000" height="440" loading="lazy">
+    <figcaption>The fan's power reading (blue) lies on the bike computer's (orange) all the way. Below, the fan level
+    (green) follows the workout: up step by step, 3 in the hard intervals and 2 in the short rests between them, off
+    about a minute after you stop pedaling and back when you ride on, level 1 in the cool-down.</figcaption>
+  </figure>
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>What was checked</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td>Power</td><td>0.7 W apart on average</td></tr>
+        <tr><td>Heart rate</td><td>0.1 to 0.2 bpm apart</td></tr>
+        <tr><td>Cadence</td><td>0.5 to 0.6 rpm apart</td></tr>
+        <tr><td>Delay</td><td>under 1 second</td></tr>
+        <tr><td>Fan level</td><td>18 changes, each one when Auto's rules say (within 2 s)</td></tr>
+        <tr><td>Buttons, "heart rate only", strap taken off (a second short ride)</td><td>as designed</td></tr>
+        <tr><td>A linked second fan</td><td>at the leader's level in 2176 of 2177 seconds</td></tr>
+        <tr><td>Off after the ride</td><td>15 minutes after the last pedal stroke, as set</td></tr>
+        <tr><td>Restarts during the rides, with the real fan motor switching</td><td>none</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="manual">
+  <h2>Also an ordinary fan</h2>
+  <p>Not riding? It is still your fan, for a hot day at the desk or a night in summer. No sensors needed.</p>
+  <figure class="video">
+    <video controls playsinline preload="none" poster="img/demo-manual.jpg" width="1086" height="960"
+      aria-label="The author's fan on the left, its WattWind page on the right: pressing 1, 2, 3 and Off on the page switches the fan between its speeds within a second; with sound">
+      <source src="img/demo-manual.mp4" type="video/mp4">
+      <a href="img/demo-manual.mp4">The video (MP4, 3 MB)</a>
+    </video>
+    <figcaption>Pressing 1, 2, 3 and Off on the page (right): the fan follows within a second. With sound, so you hear
+    the speeds change. No sensors connected here, so the values show –.</figcaption>
+  </figure>
+  <div class="grid2">
+    <div class="card">
+      <h3>Manual: Off · 1 · 2 · 3</h3>
+      <p>Press <b>Off</b>, <b>1</b>, <b>2</b> or <b>3</b> on the page and the fan stays at that level until you
+      change it, also after a ride, like any fan. <b>Auto</b> hands it back to your riding.</p>
+    </div>
+    <div class="card">
+      <h3>Off timer</h3>
+      <p>At 1, 2 or 3: <b>Off in 30 min, 1 h or 2 h</b>. Then it turns off and stays off, for falling asleep
+      with the fan on.</p>
+    </div>
+    <div class="card">
+      <h3>Forgotten? It switches itself off</h3>
+      <p>After 8 hours in Manual it goes back to Auto, so a fan you forgot is off by the next morning. Change the
+      8 hours in Settings (up to 24), or set 0 to stay in Manual until you change it yourself.</p>
+    </div>
+    <div class="card">
+      <h3>On your phone</h3>
+      <p>The fan's own speed switch is replaced by WattWind, so the buttons are on its web page. Put the page on
+      your phone's home screen and it opens like an app: on an <b>iPhone</b> in Safari, Share → <b>Add to Home
+      Screen</b>; on <b>Android</b> in Chrome, menu ⋮ → <b>Add to home screen</b>.</p>
+      <figure>
+        <img src="img/ui-home-screen.jpg" alt="An iPhone home-screen folder named Cycling: the green WattWind icon next to other cycling apps" width="800" height="533" loading="lazy">
+        <figcaption>On the home screen, next to the other cycling apps. (The other app icons belong to their owners.)</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section id="linked">
+  <h2>Linked fans</h2>
+  <p>One fan in front is often not enough on a hot day: a fan from the side, or one from above, cools a lot more.
+  With linked fans every fan has its own WattWind, and they all follow one ride. You set it up once, and after that
+  only one page needs touching.</p>
+  <figure>
+    <img src="img/linked-fans-scene.svg" alt="A bike on a smart trainer seen from above with three fans: a front fan with the WattWind leader at level 3, a left side fan following one level lower at level 2, and a right side fan with its own settings at level 1" width="1000" height="560" loading="lazy">
+    <figcaption>What linked fans are for: one rider, several fans, each blowing at its own level.</figcaption>
+  </figure>
+  <div class="grid2">
+    <div class="card">
+      <h3>Leader and followers</h3>
+      <ul>
+        <li>One WattWind, the <b>leader</b>, reads the heart-rate strap and the trainer, the same as a single fan.</li>
+        <li>It sends the heart rate, power, cadence and its level over your home Wi-Fi once a second.</li>
+        <li>Any number of <b>followers</b> listen. They don't use Bluetooth at all, so the sensors keep a free
+          connection for your training app.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>What a follower does</h3>
+      <ul>
+        <li><b>Same level:</b> runs at the leader's level, also when you press the leader's buttons or use its off
+          timer, so the leader's page is one remote for all fans.</li>
+        <li><b>One or two lower:</b> the same, but gentler, for a side fan that joins in with harder efforts: one
+          lower is off while the leader is at 1, two lower runs only when the leader is at 3. <b>One higher</b> for a weaker or
+          farther fan; when the leader is off, it is off too.</li>
+        <li><b>Own settings:</b> takes the leader's heart rate and power and decides with its own Auto settings, for
+          example a fan that only starts at hard efforts.</li>
+      </ul>
+    </div>
+  </div>
+  <details class="more">
+  <summary>Setting it up, and what happens when something goes wrong</summary>
+  <div class="grid2">
+    <div class="card">
+      <h3>Setting it up</h3>
+      <ol>
+        <li>Put all fans on the same home network (not a guest network; "client isolation" blocks it).</li>
+        <li>On the leader: Settings → Linked fans → <b>Pair a new fan</b>. Pairing stays open for 60 seconds.</li>
+        <li>On the follower, press <b>Follow</b> next to the leader in the same list. It restarts and follows from
+          then on.</li>
+      </ol>
+      <p>Changing between same level and own settings, or the level offset, applies at once. Only starting and
+        stopping following restarts the fan.</p>
+    </div>
+    <div class="card">
+      <h3>When something goes wrong</h3>
+      <ul>
+        <li>Leader unplugged or Wi-Fi gone: the followers hold their level for a minute, then step down one level a
+          minute until off.</li>
+        <li>A follower's own buttons still work. Its <b>Follow</b> button hands it back to the leader.</li>
+        <li>Messages are signed with a key that pairing hands over, so a fan only follows its own leader, and copied
+          or faked messages are ignored. They are encrypted too: other devices on your network can't read them.</li>
+        <li>Done with a follower? <b>Unpair all followers</b> on the leader gives it a new key, so every follower
+          stops; <b>Pair again</b> on the ones you want back.</li>
+      </ul>
+    </div>
+  </div>
+  </details>
+  <p>Details in the <a href="help.html#linked">user manual</a>.</p>
+</section>
+
+<section id="ui">
+  <h2>The phone page</h2>
+  <div class="shots">
+    <figure>
+      <img src="img/ui-status.png" alt="Phone view of the fan's page: level 2 Medium in Auto, 205 W, 91 rpm, 146 bpm, demand 0.82, both sensors connected, and the Auto, Off, 1, 2, 3 buttons" width="500" height="620" loading="lazy">
+      <figcaption>Status and control, mid-ride (example values).</figcaption>
+    </figure>
+    <figure>
+      <img src="img/ui-help.png" alt="Built-in help page explaining the screen and how Auto decides, with the threshold table" width="500" height="1200" loading="lazy">
+      <figcaption>Built-in help (also on this site: <a href="help.html">user manual</a>).</figcaption>
+    </figure>
+    <figure>
+      <img src="img/ui-settings.png" alt="Settings: FTP, heart rate range, step-up and step-down thresholds, fan response, timeouts, network and sensors" width="500" height="1750" loading="lazy">
+      <figcaption>Settings.</figcaption>
+    </figure>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <h3>One page, phone first</h3>
+      <ul>
+        <li><b>Status:</b> big fan level, mode, live power / HR / cadence, demand score, sensor dots.</li>
+        <li><b>Control:</b> Auto · Off · 1 · 2 · 3.</li>
+        <li><b>Riders</b> (<a href="help.html#settings">manual</a>)<b>:</b> up to 5 profiles (FTP, heart-rate range, power / heart rate / both, fan response, step up / down levels, own strap); the fan switches to
+          whoever's strap is being worn.</li>
+        <li><b>Linked fans</b> (<a href="help.html#linked">manual</a>)<b>:</b> more WattWinds can follow one leader over Wi-Fi (same level, or their own settings
+          from the leader's heart rate and power); only the leader uses the sensors' Bluetooth.</li>
+        <li><b>Settings:</b> FTP, HR max/rest, thresholds, fan response, timeouts, sensor choice, Share heart rate, Wi-Fi,
+          hostname, a Restart button, and <b>Erase everything</b> before you give the fan away.</li>
+        <li><b>Help:</b> a built-in manual at <code>/help</code>, behind the ? next to the title. The same
+          <a href="help.html">user manual</a> is on this site, so you can read it before building.</li>
+      </ul>
+      <p>Served by the fan itself: no app, no account, no internet needed.</p>
+      <details class="more">
+      <summary>Plus diagnostics, backups, updates over Wi-Fi and shortcuts</summary>
+      <ul>
+        <li><b>Diagnostics</b> at the bottom of Settings (version, running time, last restart, Wi-Fi signal, sensor
+          batteries, a firmware file check, a logbook), and a warning on the main screen if something needs you.
+          For a problem that's hard to catch, a <b>Detailed recording</b> (Settings → Maintenance) keeps every
+          second of a ride for 24 h, to download and send with your report.</li>
+        <li><b>Backup:</b> download the settings as a file and restore them on this or another fan.</li>
+        <li><b>Firmware update:</b> pick the new release file on the page; the fan checks its signature (only official
+          releases are accepted) and every file, then restarts with the new version. No USB cable, the box stays closed.
+          <b>Check for updates</b> asks GitHub from your phone, when you press it, whether there is a new version.</li>
+        <li><b>Shortcuts and home automation:</b> "Fan high" on your phone's home screen, a voice assistant, or the fan
+          in Home Assistant; the <a href="help.html#shortcuts">manual</a> has the phone shortcuts, the
+          <a href="build.html#home-assistant">build guide</a> the Home Assistant setup.</li>
+      </ul>
+      </details>
+    </div>
+    <div class="card">
+      <h3>Wi-Fi that always works</h3>
+      <ul>
+        <li>Joins your home network and answers at <code>http://wattwind.local</code>; the IP is shown on the page for Android.</li>
+        <li>No network saved or not reachable within 20 s: it opens its own WPA2 access point <code>WattWind-XXXX</code> at <code>192.168.4.1</code>.</li>
+        <li>2.4 GHz Wi-Fi with WPA2 (5 GHz-only and WPA3-only networks don't work). <b>Find networks</b> lists what
+          the fan can see, strongest first, so you pick your network instead of typing it (and only usable 2.4 GHz
+          networks show up).</li>
+        <li>Fan control never depends on Wi-Fi.</li>
+      </ul>
+      <details class="more">
+      <summary>Setup and dropouts</summary>
+      <ul>
+        <li><b>Setup shows the address first:</b> from the access point, "Test Wi-Fi" joins your network while
+          the access point stays up and shows the IP your router gave it, before the fan switches over.
+          A wrong password is reported at once and nothing is saved.</li>
+        <li>Router gone for 2 minutes (or slower to start than the fan after a power cut): its own access point,
+          so the page stays reachable; it tries the home network again after 2 minutes, then every 5, and switches back by itself.</li>
+        <li>Captive portal on its own network: join <code>WattWind-XXXX</code> and the page opens by itself, like a
+          hotel Wi-Fi sign-in, so nobody has to type <code>192.168.4.1</code>.</li>
+      </ul>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section id="privacy">
+  <h2>Security and privacy</h2>
+  <p>A box on your home network that switches mains and knows your heart rate should be careful with both. The design
+  was compared point by point with ETSI EN 303 645, the security baseline for consumer smart devices behind the EU
+  and UK rules, as a guide, not a certification. It's a hobby project, made with care, but no promises: no support period, no
+  guaranteed updates.</p>
+  <ul>
+    <li><b>Your own password and PIN from the start.</b> The first time you open the page it asks for a password for
+      the fan's own Wi-Fi and a settings PIN, so no fan keeps the published default. The PIN protects the settings,
+      Wi-Fi, firmware updates and the logbook (and the fan buttons too, if you like); each phone or computer asks once
+      and remembers it. Wrong guesses are slowed down. (<a href="help.html#settings">Settings</a>)</li>
+    <li><b>Only official firmware.</b> Updates from the page must carry the release's digital signature; a modified
+      or foreign file is refused and nothing changes. (<a href="build.html#update">Updating the firmware</a>)</li>
+    <li><b>Your data stays home.</b> No cloud, no account, no app. Settings and the logbook stay on the fan, and the
+      logbook keeps no heart-rate or power values (only a detailed recording you start yourself does, for 24 h, to
+      find a problem; deleted 7 days later). The only thing the fan asks the internet is the time.
+      (<a href="help.html#data">Your data</a>)</li>
+  </ul>
+  <details class="more">
+  <summary>More: linked fans, Bluetooth, browsers, a forgotten PIN, giving it away, limits</summary>
+  <ul>
+    <li><b>Linked fans talk encrypted.</b> Heart rate and power between your fans are encrypted and signed with a
+      key only paired fans have: other devices on your network can't read or fake them.</li>
+    <li><b>Heart rate over Bluetooth only if you ask.</b> Share heart rate is off until you tick it; while it's on,
+      the fan sends your heart rate like a strap does, to one app or watch nearby.</li>
+    <li><b>Websites can't reach it through your browser.</b> The fan answers only requests addressed to it by its own
+      name or address, and takes commands only from its own page.</li>
+    <li><b>Forgot the PIN or the access point password?</b> Plug the fan in and out three times (a few seconds
+      each), <b>then plug it in a fourth time and leave it plugged in</b>: that resets just the PIN and the access point password, keeps every
+      other setting, and the page asks you to choose new ones. No tools, no computer.</li>
+    <li><b>Giving it away?</b> Settings → <b>Erase everything</b> deletes all settings, riders, sensors, Wi-Fi, PIN,
+      keys and the logbook; the fan starts as new.</li>
+    <li><b>Limits:</b> the page uses plain HTTP, protected by your Wi-Fi's own encryption (real HTTPS on a
+      device this small means certificate warnings on every visit), and the USB port inside the box stays open to
+      whoever opens it: it is your fan. Details and reasons for every point:
+      <a href="build.html#hood">Under the hood</a>.</li>
+  </ul>
+  </details>
+</section>
+
+<section id="buildit">
+  <h2>Build one</h2>
+  <p>Six stages, and the first four need no mains at all: the board, the relays and the box are tested on USB
+  power from a computer.</p>
+  <ol>
+    <li><b>The board:</b> order the PCB from the Gerber files and solder 16 through-hole parts.</li>
+    <li><b>MicroPython:</b> copy one file onto the Pico.</li>
+    <li><b>The program:</b> copy the firmware folder with Thonny; a relay test clicks through every level.</li>
+    <li><b>The box:</b> print it, melt in seven inserts, screw the board in (or use your own: the build guide lists what it needs).</li>
+    <li><b>The fan:</b> replace its speed switch with a cable to the box.</li>
+    <li><b>Setup:</b> join the fan's Wi-Fi, check the speeds, choose your own password and PIN, enter your FTP and
+      heart-rate range, ride.</li>
+  </ol>
+  <p><a href="build.html"><b>Read the build guide →</b></a> Parts list, the parametric enclosure, every step with
+  pictures of the wiring, firmware updates, and the design details of the board. All files are on
+  <a href="https://github.com/wattwind/wattwind">GitHub</a>, the ready-made ones (MicroPython file, Gerbers, print files) in its
+  <a href="https://github.com/wattwind/wattwind/releases/latest">latest release</a>.</p>
+</section>
+
+<section id="safety">
+  <h2>Safety</h2>
+  <div class="warn">
+    <p><strong>This project switches 230 V mains.</strong> Mains can kill. Only build it if you are competent
+    with mains wiring, never work on it plugged in, put it in a closed insulating enclosure, and use an
+    RCD-protected outlet (residual-current device: the earth-leakage breaker that trips in milliseconds). You build and use it at your own risk.
+      It's shared as a hobby project, as it is, with no promise of fixes or updates.</p>
+    <ul>
+      <li><b>Prototype.</b> It runs the author's fan, but the design is not certified or tested to any standard
+        (IEC 60335 or others).</li>
+      <li><b>Modifying the fan</b> voids its warranty and its CE conformity; you become responsible for the
+        modified appliance. For personal use only: don't sell built units.</li>
+      <li><b>The fan can start with nobody at it</b>: Auto turns it on as soon as the sensors report effort,
+        and anyone on your Wi-Fi can switch it on from the web page in another room (see Network below).
+        Keep the fan guard on, keep children and pets away, and unplug it when not riding.</li>
+      <li><b>Print the box in a flame-retardant (V-0) filament</b>, walls solid. PLA, PETG and ordinary ABS
+        burn; see <a href="build.html#enclosure">Enclosure</a>.</li>
+      <li><b>Unplug mains before connecting USB</b> (rarely needed: updates go over Wi-Fi; the box has no USB opening, so the lid and the board come off for it).
+        The board allows both at once electrically, but a wiring mistake or an insulation fault on the mains
+        side would then reach your computer and you through the cable.</li>
+      <li><b>Network:</b> the settings need your PIN, but the fan buttons don't by default. If others share your
+        network, tick "Fan buttons need the PIN too". Never make the page reachable from the internet.</li>
+      <li><b>Local rules:</b> in some countries mains work must be done or checked by a qualified electrician.
+        Check yours.</li>
+    </ul>
+  </div>
+  <p>What the design does to reduce the risk, in short: mains and low-voltage parts kept 8 mm apart on the board,
+  a fuse, both wires disconnected when the fan is off, and the relays off at every start and after any software
+  fault (a watchdog restarts it with the fan off). These measures lower the risk; they don't make the device safe on
+  their own or replace testing.</p>
+  <details class="more">
+  <summary>The board and firmware rules in detail</summary>
+  <div class="grid2">
+    <div class="card">
+      <h3>Board layout rules</h3>
+      <ul>
+        <li><b>8 mm</b> clearance and creepage between mains and low-voltage copper (reinforced insulation).</li>
+        <li><b>3 mm</b> between different mains nets; 2.5 mm allowed only between relay contact pads (functional insulation, IEC 60664-1, 250 V, PD2).</li>
+        <li><b>3 mm</b> mains copper to board edge; <b>6 mm</b> to mounting holes.</li>
+        <li>1.5 mm mains tracks, no copper pours in the mains area.</li>
+        <li>Unused relay contacts are treated as live nets, so the rules cover them too.</li>
+        <li>5×20 mm ceramic slow-blow fuse on wire A.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Firmware rules</h3>
+      <ul>
+        <li>First thing at boot, before any import that could fail: all relay pins driven off. They stay driven:
+          never left floating (on the Pico 2 W a floating pin could hold a relay on).</li>
+        <li>One function is the only code that touches relay pins.</li>
+        <li>Break-before-make: all speed relays off, 100 ms, then the new one.</li>
+        <li>Master relay on 100 ms before a speed relay; off 100 ms after.</li>
+        <li>At most one level change per 2 s.</li>
+        <li>8 s hardware watchdog, fed only while every critical task is alive. A hung task resets the Pico, which boots with relays off.</li>
+        <li>Every task wrapped in try/except with restart; errors in Wi-Fi, web or BLE code can't leave a relay stuck.</li>
+        <li>A soft reboot (for example from an IDE) with the radio still running triggers a hard reset, so Wi-Fi and Bluetooth always start clean.</li>
+        <li>Every saved setting is checked again at each start; a bad one goes back to its default. After three
+          error restarts in a row the fan starts with default ride settings, so its page stays reachable for a fix.</li>
+      </ul>
+    </div>
+  </div>
+  </details>
+</section>
+
+</div>
+
+<footer>
+  <div class="wrap">
+    <p>Designed with AI assistance; built, measured and tested by the author.</p>
+    <p>Provided as is, without warranty of any kind. Working with mains voltage is dangerous; follow your local
+    wiring regulations. The author accepts no liability for damage, injury or loss from building or using it.</p>
+    <p>Licenses: firmware MIT; hardware and mechanical designs (the PCB, the enclosure, the cable-entry adapters and
+    other printed parts) CERN-OHL-P v2, in every form they are published in: scripts, Fusion files, STEP and print
+    files; this site, the docs and the project's own photos, renders and drawings CC BY 4.0. Third-party material is
+    not covered: other companies' app icons, logos, product names and screenshots or artwork of their products belong
+    to their owners and are marked where they appear.
+    Included libraries keep their own licenses (Microdot and aioble: MIT). The custom MicroPython file also contains
+    Raspberry Pi's Bluetooth (BTstack) and Wi-Fi (cyw43-driver) drivers, licensed for use with Raspberry Pi chips
+    only; their texts are in <code>micropython/LICENSES</code> and come with the file. The signature check follows
+    the reference code of RFC 8032 (BSD notice in <code>firmware/ed25519.py</code>).</p>
+    <p>The WattWind name and logo aren't covered by these licences. Use them freely on your build, modified or not;
+    if you publish a changed version, just say what you changed, so nobody mistakes it for the original.</p>
+    <p>Garmin, Wahoo, Mean Well, Raspberry Pi, Finder and other names are trademarks of their owners.
+    This project is not affiliated with or endorsed by them.</p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var root = document.documentElement, key = "wattwind-theme";
+  try { var saved = localStorage.getItem(key); if (saved) root.setAttribute("data-theme", saved); } catch (e) {}
+  document.getElementById("themeToggle").addEventListener("click", function () {
+    var dark = root.getAttribute("data-theme") ? root.getAttribute("data-theme") === "dark"
+      : window.matchMedia("(prefers-color-scheme: dark)").matches;
+    var next = dark ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    try { localStorage.setItem(key, next); } catch (e) {}
+  });
+})();
+</script>
+<script>
+(function () {
+  var b = document.getElementById("toTop");
+  function update() { b.classList.toggle("show", window.scrollY > window.innerHeight); }
+  window.addEventListener("scroll", update, { passive: true });
+  update();
+  b.addEventListener("click", function (e) {
+    e.preventDefault();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    if (location.hash) history.replaceState(null, "", location.pathname + location.search);
+  });
+})();
+</script>
+</body>
+</html>

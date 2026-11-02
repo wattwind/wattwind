@@ -1,0 +1,6 @@
+# Run inside Linux (Docker): must keep LF line endings on Windows checkouts
+*.sh    text eol=lf
+*.patch text eol=lf
+# 3D models: published byte for byte
+*.step -text
+*.STEP -text

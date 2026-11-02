@@ -1,0 +1,56 @@
+(version 1)
+
+# WattWind custom design rules (KiCad 10). Reasons: hardware/DESIGN.md.
+# Net classes are assigned by pattern in wattwind.kicad_pro:
+#   Mains    = MAINS_*, MOTOR_COMMON, CHAIN_K?_COM, TAP1-3
+#   LV_Power = VSYS, +5V_PSU, GND, +3V3
+#   LV       = everything else
+# A net can match several patterns (everything matches LV), so rules use hasNetclass().
+# When several rules match, the LAST one in this file wins.
+
+# --- Mains side ---------------------------------------------------------------
+
+(rule "Mains track width"
+  (condition "A.hasNetclass('Mains')")
+  (constraint track_width (min 1.5mm)))
+
+(rule "Mains to mains clearance"
+  (condition "A.hasNetclass('Mains') && B.hasNetclass('Mains')")
+  (constraint clearance (min 3mm)))
+
+# Exception: pads of the Finder 34.51 relays (K0-K3). The library footprint has 2.4 mm pads
+# at 5.0 mm pitch, so COM to NC/NO is 2.6 mm. That is functional insulation (mains to mains);
+# IEC 60664-1 asks for 2.5 mm creepage at 250 V, pollution degree 2, material group III.
+# Must come after the 3 mm rule (last matching rule wins).
+(rule "Mains relay contact pads (Finder 34.51 pitch)"
+  (condition "A.hasNetclass('Mains') && B.hasNetclass('Mains') && A.Type == 'Pad' && B.Type == 'Pad' && A.memberOfFootprint('K?') && B.memberOfFootprint('K?')")
+  (constraint clearance (min 2.5mm)))
+
+# Mains copper to the board edge (outline and Edge.Cuts slots): 3 mm, above the 2.5 mm basic
+# creepage at 250 V, for a plastic enclosure. Use 8 mm if the edge can touch metal or a finger.
+(rule "Mains to board edge"
+  (condition "A.hasNetclass('Mains')")
+  (constraint edge_clearance (min 3mm)))
+
+# --- Mains to LV isolation (8 mm) ---------------------------------------------
+
+(rule "Mains to LV clearance"
+  (condition "A.hasNetclass('Mains') != B.hasNetclass('Mains')")
+  (constraint clearance (min 8mm)))
+
+(rule "Mains to LV creepage"
+  (condition "A.hasNetclass('Mains') != B.hasNetclass('Mains')")
+  (constraint creepage (min 8mm)))
+
+# Mounting holes: 6 mm from the hole edge (reinforced insulation needs 5 mm creepage at 250 V).
+# A metal M3 head / washer overhangs the hole by 1.2-1.9 mm, so a hole near mains copper needs
+# nylon hardware (or keep it >= 7 mm away).
+(rule "Mains to mounting holes"
+  (condition "A.hasNetclass('Mains') && B.Pad_Type == 'NPTH, mechanical'")
+  (constraint hole_clearance (min 6mm)))
+
+# --- LV side ------------------------------------------------------------------
+
+(rule "LV power track width"
+  (condition "A.hasNetclass('LV_Power') && !A.hasNetclass('Mains')")
+  (constraint track_width (min 0.8mm)))

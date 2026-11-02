@@ -1,0 +1,10 @@
+{
+	"autodeskProduct": "Fusion",
+	"type": "script",
+	"author": "",
+	"description": {
+		"": "WattWind enclosure V2: sturdier parametric FDM enclosure, screws from underneath"
+	},
+	"supportedOS": "windows|mac",
+	"editEnabled": true
+}

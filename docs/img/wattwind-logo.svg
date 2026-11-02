@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 456 96" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .watt{stroke:#1f7a4d}.bolt{fill:#1f7a4d}.wind{stroke:#1c211d}
+    @media (prefers-color-scheme: dark){.watt{stroke:#4cc38a}.bolt{fill:#4cc38a}.wind{stroke:#e6ebe7}}
+  </style>
+  <g transform="translate(4,8)">
+    <g stroke="#9aa69e" stroke-width="6" stroke-linecap="round">
+      <path d="M4 26 H30"/><path d="M0 42 H24"/><path d="M8 58 H28"/>
+    </g>
+    <path class="bolt" d="M58 2 L30 46 H46 L38 78 L72 30 H55 L66 2 Z"/>
+  </g>
+  <g class="watt" transform="translate(100,22)" fill="none" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M0 0 L9 52 L19 16 L29 52 L38 0"/>
+    <path transform="translate(50,0)" d="M0 52 L16 0 L32 52 M7 34 H25"/>
+    <path transform="translate(94,0)" d="M0 0 H32 M16 0 V52"/>
+    <path transform="translate(142,0)" d="M0 0 H32 M16 0 V52"/>
+  </g>
+  <g class="wind" transform="translate(300,22)" fill="none" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M0 0 L9 52 L19 16 L29 52 L38 0"/>
+    <path transform="translate(52,0)" d="M0 0 V52"/>
+    <path transform="translate(68,0)" d="M0 52 V0 L30 52 V0"/>
+    <path transform="translate(112,0)" d="M0 0 H10 C44 0 44 52 10 52 H0 Z"/>
+  </g>
+</svg>

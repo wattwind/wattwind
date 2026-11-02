@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WattWind</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'%3E%3Crect width='80' height='80' rx='18' fill='%231f7a4d'/%3E%3Cg transform='translate(4,0)'%3E%3Cg stroke='%23cfe9da' stroke-width='5' stroke-linecap='round'%3E%3Cpath d='M8 30 H26'/%3E%3Cpath d='M5 42 H21'/%3E%3Cpath d='M10 54 H24'/%3E%3C/g%3E%3Cpath d='M50 10 L28 44 H40 L34 70 L60 32 H47 L56 10 Z' fill='%23fff'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="WattWind">
+<style>
+:root{--bg:#f4f5f7;--card:#fff;--fg:#1b1d21;--mute:#6b7280;--line:#dde0e5;--acc:#1f6feb;--accfg:#fff;--ok:#1a9b4b;--bad:#c93c37;--warn:#8a5a00}
+@media (prefers-color-scheme:dark){:root{--bg:#111316;--card:#1c1f24;--fg:#e8eaed;--mute:#9aa1ab;--line:#2e333a;--acc:#4c8dff;--accfg:#0b0d10;--ok:#3fbf6f;--bad:#f0625d;--warn:#e0a63a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:520px;margin:0 auto;padding:12px 16px 32px}
+header{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:4px 0 12px}
+.hdr{display:flex;gap:10px;align-items:center}
+.fname{font-size:15px;font-weight:400;color:var(--mute)}.fname:empty{display:none}
+h1{font-size:20px;margin:0;display:flex;align-items:center;gap:8px}
+.logo{height:24px;width:auto;display:block}.lg-s{stroke:#9aa69e}.lg-b{fill:#1f7a4d}.lg-w{stroke:#1f7a4d}.lg-d{stroke:var(--fg)}
+@media (prefers-color-scheme:dark){.lg-b{fill:#4cc38a}.lg-w{stroke:#4cc38a}}
+section{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
+.big{display:flex;align-items:center;justify-content:space-between}
+.lvl{font-size:72px;font-weight:700;line-height:1}
+.lvlname{font-size:20px;color:var(--mute)}
+.badge{display:inline-block;padding:4px 10px;border-radius:99px;background:var(--line);font-size:14px;font-weight:600}
+.badge.auto{background:var(--acc);color:var(--accfg)}
+.note{font-size:13px;color:var(--warn);min-height:18px;margin-top:4px}
+.note.info{color:var(--mute)}
+.warnline{font-size:13px;color:var(--warn);margin-top:6px}
+.warnline:empty{display:none}
+.notice{display:flex;gap:10px;align-items:center;justify-content:space-between;font-size:14px;margin-top:8px;padding:8px 10px;border:1px solid var(--warn);border-radius:8px}
+.notice[hidden]{display:none}
+.notice button{flex:none;padding:6px 14px}
+.vals{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px;text-align:center}
+.vals b{display:block;font-size:30px;line-height:1.15}
+.vals span{font-size:13px;color:var(--mute)}
+.logv{position:fixed;top:0;right:0;bottom:0;left:0;z-index:20;background:var(--bg);display:flex;flex-direction:column;padding:10px 12px}.logv[hidden]{display:none}
+.logbar{display:flex;align-items:center;gap:8px;margin-bottom:8px}.logbar b{flex:1;font-size:18px}.logbar button{padding:8px 14px;font-size:15px}
+.logv pre{flex:1;overflow:auto;margin:0;padding:8px;background:var(--card);border:1px solid var(--line);border-radius:8px;font-size:12px;white-space:pre-wrap;word-break:break-word}
+.dots{margin-top:4px;font-size:13px;color:var(--mute)}
+.sn{white-space:nowrap}
+.rname{margin-top:10px;font-size:13px;color:var(--mute)}
+.rname:empty{display:none}
+.dot{display:inline-block;width:10px;height:10px;box-sizing:border-box;border-radius:50%;border:2px solid var(--bad);background:transparent;margin:0 4px 0 10px;vertical-align:-1px}
+.dot.on{background:var(--ok);border-color:var(--ok)}
+.ctl{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.ctl button{height:64px;font-size:20px;font-weight:700}
+.nudge{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px}
+.nudge[hidden]{display:none}
+.riders{display:flex;gap:6px;margin:4px 0 8px}.riders select{flex:1;min-width:0;height:36px;font:inherit}
+.riders button{padding:6px 12px;font-size:14px;min-height:40px}
+.hint{font-size:12px;color:var(--mute);margin:-2px 0 8px}.warnhint{color:var(--warn)}
+.small{display:block;margin:6px 0 4px auto;padding:6px 12px;font-size:14px;min-height:40px}
+.timer{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:14px;color:var(--mute)}
+.timer[hidden],.timer button[hidden]{display:none}
+.timer button{flex:1;height:40px;font-size:15px}
+.timer #tcancel{flex:none;width:44px}
+.nudge button{width:64px;height:44px;font-size:24px;font-weight:700}
+.nudge span{font-size:14px;color:var(--mute);text-align:center}
+button{font:inherit;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg);cursor:pointer}
+button.on{background:var(--acc);border-color:var(--acc);color:var(--accfg)}
+button:disabled{opacity:.4;cursor:default}
+details summary{font-weight:600;cursor:pointer;min-height:28px}
+.grp{border-top:1px solid var(--line);margin-top:8px}.grp>summary{padding:12px 0;font-size:15px}
+.danger{color:var(--bad);border-color:var(--bad)}.dangertxt{color:var(--bad)}
+input.bad,select.bad{border-color:var(--bad)!important;box-shadow:0 0 0 1px var(--bad)!important;outline-color:var(--bad)}
+.offline{font-size:14px;font-weight:600;color:var(--bad);margin-bottom:8px}
+body.off .big,body.off .note,body.off .vals,body.off .dots,body.off .rname{opacity:.3}
+.toast{position:fixed;left:12px;right:12px;top:12px;top:calc(12px + env(safe-area-inset-top));z-index:30;box-sizing:border-box;max-width:504px;margin:0 auto;padding:10px 12px;border-radius:10px;background:var(--fg);color:var(--bg);font-size:14px;box-shadow:0 2px 12px rgba(0,0,0,.3)}.toast.err{background:var(--bad);color:#fff}
+button.pend{opacity:.7}
+[hidden]{display:none!important}
+label{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:8px 0;font-size:14px}
+input,select{font:inherit;font-size:16px;width:8.5em;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)}
+input[type=checkbox]{width:auto}
+h3{font-size:14px;margin:16px 0 4px;color:var(--mute)}
+.save{width:100%;height:44px;margin-top:10px;font-weight:600}
+.undo{height:36px;margin-top:6px;font-weight:400}
+.filebtn{position:relative;display:flex;justify-content:center;align-items:center;height:44px;margin:10px 0 0;font-weight:600;
+  font-size:16px;border:1px solid var(--line);border-radius:10px;background:var(--bg);cursor:pointer}
+.filebtn input{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden}
+.filebtn:focus-within{outline:2px solid var(--acc);outline-offset:2px}
+input.chg,select.chg{border-color:var(--warn);box-shadow:0 0 0 1px var(--warn)}input[type=checkbox].chg{outline:2px solid var(--warn)}
+.unsaved{position:fixed;left:12px;right:12px;bottom:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:15;box-sizing:border-box;max-width:504px;margin:0 auto;display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--card);border:2px solid var(--warn);border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,.25);font-size:14px}
+.unsaved span{flex:1;font-weight:600}.unsaved button{height:38px;padding:0 14px}.unsaved .go{background:var(--acc);border-color:var(--acc);color:var(--accfg);font-weight:600}
+.msg{font-size:14px;margin-top:8px;min-height:20px}
+.msg.err{color:var(--bad)}.msg.ok{color:var(--ok)}
+#set .msg:empty{display:none}   /* message lines in Settings take no space while they have nothing to say */
+.dev{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--line);font-size:14px}
+.dev small{color:var(--mute);display:block}
+.dev button{padding:6px 12px;font-size:14px;min-height:40px;margin-left:4px}
+.help{display:inline-block;width:34px;height:34px;line-height:34px;text-align:center;border-radius:50%;background:var(--line);color:var(--fg);font-size:15px;font-weight:700;text-decoration:none;vertical-align:3px}
+.newip{margin-top:10px;padding:10px;border:1px solid var(--ok);border-radius:10px;font-size:14px}
+.newip a{font-size:18px;font-weight:700;color:var(--acc)}
+.cur{font-size:14px;margin:4px 0}.cur button{padding:6px 12px;min-height:40px;margin-left:4px}
+.diag{font-size:12px;color:var(--mute);margin-top:14px;line-height:1.6}.cur code{font-size:12px;color:var(--mute)}
+</style>
+</head>
+<body>
+<main>
+<header><h1><svg class="logo" viewBox="0 0 456 96" role="img" aria-label="WattWind"><g transform="translate(4,8)"><g class="lg-s" stroke-width="6" stroke-linecap="round"><path d="M4 26 H30"/><path d="M0 42 H24"/><path d="M8 58 H28"/></g><path class="lg-b" d="M58 2 L30 46 H46 L38 78 L72 30 H55 L66 2 Z"/></g><g class="lg-w" transform="translate(100,22)" fill="none" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"><path d="M0 0 L9 52 L19 16 L29 52 L38 0"/><path transform="translate(50,0)" d="M0 52 L16 0 L32 52 M7 34 H25"/><path transform="translate(94,0)" d="M0 0 H32 M16 0 V52"/><path transform="translate(142,0)" d="M0 0 H32 M16 0 V52"/></g><g class="lg-d" transform="translate(300,22)" fill="none" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"><path d="M0 0 L9 52 L19 16 L29 52 L38 0"/><path transform="translate(52,0)" d="M0 0 V52"/><path transform="translate(68,0)" d="M0 52 V0 L30 52 V0"/><path transform="translate(112,0)" d="M0 0 H10 C44 0 44 52 10 52 H0 Z"/></g></svg> <span class="fname" id="fname"></span></h1><div class="hdr"><a href="/help" class="help" title="Help" aria-label="Help">?</a></div></header>
+
+<section>
+  <div class="offline" id="offl" role="status" hidden></div>
+  <div class="big">
+    <div><div class="lvl" id="lvl">–</div><div class="lvlname" id="lvlname"></div></div>
+    <span class="badge" id="mode">–</span>
+  </div>
+  <div class="note" id="note"></div>
+  <div class="notice" id="notice" hidden><span id="ntext"></span><button type="button" onclick="dismiss()">OK</button></div>
+  <div class="vals">
+    <div><b id="pw">–</b><span>W</span></div>
+    <div><b id="cad">–</b><span>rpm</span></div>
+    <div><b id="hr">–</b><span>bpm</span></div>
+    <div><b id="dem">–</b><span id="deml">demand</span></div>
+  </div>
+  <div class="rname" id="rname"></div>
+  <div class="dots"><span id="dlab">Sensors:</span><span class="sn" id="snhr"><span class="dot" id="dhr"></span><span id="nhr">HR</span></span><span class="sn" id="snpw"><span class="dot" id="dpw"></span><span id="npw">Power</span></span><span class="sn" id="snld" hidden><span class="dot" id="dld"></span><span id="nld"></span></span></div>
+  <div class="warnline" id="warn"></div>
+</section>
+
+<section>
+  <div class="ctl">
+    <button id="bA" onclick="setMode('auto')">Auto</button>
+    <button id="b0" onclick="setMode('manual',0)">Off</button>
+    <button id="b1" onclick="setMode('manual',1)">1</button>
+    <button id="b2" onclick="setMode('manual',2)">2</button>
+    <button id="b3" onclick="setMode('manual',3)">3</button>
+  </div>
+  <div class="timer" id="timer" hidden>
+    <span>Off in</span>
+    <button type="button" onclick="timer(30)">30 min</button>
+    <button type="button" onclick="timer(60)">1 h</button>
+    <button type="button" onclick="timer(120)">2 h</button>
+    <button type="button" id="tcancel" onclick="timer(0)" aria-label="cancel the timer">✕</button>
+  </div>
+  <div class="nudge" id="nudge" hidden>
+    <button type="button" onclick="nudge(-1)" aria-label="less fan">−</button>
+    <span id="ntxt">Auto as calculated</span>
+    <button type="button" onclick="nudge(1)" aria-label="more fan">+</button>
+  </div>
+  <div class="msg" id="cmsg"></div>
+</section>
+
+<section id="setupc" hidden>
+  <h3>Set up your fan</h3>
+  <div class="hint">Once: choose your own password for the fan's Wi-Fi network (instead of the default <i>wattwind</i>,
+  which anyone can look up) and a PIN for its settings. The fan buttons keep working without the PIN, and this device
+  remembers it.</div>
+  <label>Access point password (8+ characters)<input type="password" id="su_ap" autocomplete="new-password"></label>
+  <label>Password again<input type="password" id="su_ap2" autocomplete="new-password"></label>
+  <label><span id="su_plab">Settings PIN (4–16 characters)</span><input type="password" id="su_pin" autocomplete="new-password"></label>
+  <label>PIN again<input type="password" id="su_pin2" autocomplete="new-password"></label>
+  <label id="su_oldrow" hidden>Current PIN<input type="password" id="su_old" autocomplete="off"></label>
+  <button type="button" class="save" onclick="setupGo()">Save</button>
+  <div class="msg" id="sumsg"></div>
+  <div class="hint">Moving from another fan? Settings → Maintenance → Restore from a file brings its settings over instead.</div>
+</section>
+
+<section>
+<details id="set">
+  <summary>Settings</summary>
+  <form id="f" onsubmit="saveCfg(event)" novalidate>
+  <div class="msg" id="smsg"></div>
+  <details class="grp" open><summary>Rider</summary>
+    <div class="riders"><select id="rsel" aria-label="rider" onchange="rider('select',+this.value)"></select>
+      <button type="button" onclick="rider('add')">Add</button><button type="button" onclick="rider('rename')">Rename</button><button type="button" id="rdel" onclick="rider('delete')">Delete</button></div>
+    <div class="hint">Saved per rider: FTP, heart rate, Decide by, fan response, the step up / down levels below and the heart-rate strap (Sensors). Everything else is shared. Decide by and Fan response save as soon as you pick; for the rest a bar with Save appears at the bottom.</div>
+    <label>FTP (W)<input type="number" name="ftp" min="50" max="1000" required></label>
+    <label>HR max (bpm)<input type="number" name="hr_max" min="100" max="230" required></label>
+    <label>HR rest (bpm)<input type="number" name="hr_rest" min="30" max="120" required></label>
+    <label>Decide by<select name="use" onchange="autoSave('use')"><option value="both">Power and heart rate</option><option value="power">Power only</option><option value="hr">Heart rate only</option></select></label>
+    <label>Fan response<select name="response" onchange="autoSave('response')"><option value="calm">Calm</option><option value="normal">Normal</option><option value="quick">Quick</option></select></label>
+    <h3>Auto: step up when demand ≥</h3>
+    <div class="hint">0.70 = 70 % of FTP or of heart-rate reserve. In training zones: Help → How Auto decides.</div>
+    <label>Level 1<input type="number" step="0.01" min="0.01" max="2" name="up0" required></label>
+    <label>Level 2<input type="number" step="0.01" min="0.01" max="2" name="up1" required></label>
+    <label>Level 3<input type="number" step="0.01" min="0.01" max="2" name="up2" required></label>
+    <h3>Auto: step down when demand &lt;</h3>
+    <label>Level 1<input type="number" step="0.01" min="0.01" max="2" name="dn0" required></label>
+    <label>Level 2<input type="number" step="0.01" min="0.01" max="2" name="dn1" required></label>
+    <label>Level 3<input type="number" step="0.01" min="0.01" max="2" name="dn2" required></label>
+    <button type="button" class="small" onclick="resetTo('rider')">Reset this rider's values to defaults</button>
+  </details>
+  <details class="grp"><summary>Timing</summary>
+    <label>Min. time before step up (s)<input type="number" name="dwell_up_s" min="0" max="600" required></label>
+    <label>Min. time before step down (s)<input type="number" name="dwell_down_s" min="0" max="600" required></label>
+    <label>Manual → auto after (min, 0 = never)<input type="number" name="manual_timeout_min" min="0" max="1440" required></label>
+    <label>Auto: off after no pedaling (min)<input type="number" name="idle_off_min" min="1" max="600" required></label>
+    <label>Auto: highest level (1-3)<input type="number" name="max_level" min="1" max="3" required></label>
+    <button type="button" class="small" onclick="resetTo('fan')">Reset these timing settings to defaults</button>
+  </details>
+  <details class="grp"><summary>Wi-Fi and address</summary>
+    <div class="cur" id="netinfo"></div>
+    <h3>Your Wi-Fi</h3>
+    <div class="hint">Saving reboots the fan, which turns it off.</div>
+    <label>Network name<input name="ssid" autocomplete="off"></label>
+    <button type="button" class="save" id="wscanb" onclick="wscan()">Find networks</button>
+    <div id="wlist"></div>
+    <label>Password<input type="password" name="password" autocomplete="new-password"></label>
+    <button type="button" class="save" id="wbtn" onclick="saveWifi()">Save Wi-Fi and reboot</button>
+    <div class="msg" id="wmsg"></div>
+    <div id="wnew"></div>
+    <h3>The fan's own Wi-Fi</h3>
+    <div class="hint">WattWind-XXXX, for setting up, and when your Wi-Fi isn't there.</div>
+    <label>Its password<input type="password" name="ap_password" placeholder="unchanged" minlength="8" maxlength="63" autocomplete="new-password"></label>
+    <label>Password again<input type="password" name="ap_password2" placeholder="unchanged" autocomplete="new-password"></label>
+    <div class="hint warnhint" id="apdef" hidden>Still the default password, which anyone can look up: set your own (8+ characters).</div>
+    <h3>The fan's name</h3>
+    <label>Name<input name="hostname" required maxlength="32" pattern="[A-Za-z0-9]([A-Za-z0-9\-]{0,30}[A-Za-z0-9])?" title="1 to 32 characters: letters, digits and - (not at the start or end)"></label>
+    <div class="hint">The page opens as http://<i>name</i>.local. Give each fan its own name if you have several.</div>
+  </details>
+  <details class="grp"><summary>PIN</summary>
+    <label>New settings PIN<input type="password" name="new_pin" placeholder="unchanged" minlength="4" maxlength="16" autocomplete="new-password"></label>
+    <label>New PIN again<input type="password" name="new_pin2" placeholder="unchanged" autocomplete="new-password"></label>
+    <div class="hint warnhint" id="nopin" hidden>No PIN yet: anyone on your network can change these settings, install firmware and read the logbook. Set one above.</div>
+    <label>Fan buttons need the PIN too<input type="checkbox" name="pin_for_control"></label>
+    <button type="button" class="small" onclick="localStorage.removeItem('fanpin');msg('smsg','Forgotten: this device asks for the PIN again next time.',true)">Forget the PIN on this device</button>
+  </details>
+  </form>
+  <details class="grp" id="sensblk"><summary>Sensors</summary>
+  <div class="cur">Heart rate<span id="ahrwho"></span>: <code id="ahr"></code> <button type="button" onclick="pick('hr_addr','')">Forget</button></div>
+  <div class="cur">Power: <code id="apw"></code> <button type="button" onclick="pick('power_addr','')">Forget</button></div>
+  <button type="button" class="save" id="scanb" onclick="scan()">Find sensors</button>
+  <div id="devs"></div>
+  <div class="msg" id="bmsg"></div>
+  <h3>Share heart rate</h3>
+  <label>Pass heart rate on to an app or watch<input type="checkbox" id="hrshare" onchange="shareSave()"></label>
+  <div class="hint">For a strap that allows only one connection: the fan shows itself as a heart-rate sensor, and your
+  app or watch connects to the fan instead of the strap. One app or watch at a time. Saved at once.</div>
+  <div class="hint" id="sharest"></div>
+  <div class="msg" id="shmsg"></div>
+  </details>
+  <details class="grp"><summary>Linked fans</summary>
+  <div class="hint" id="lkrole"></div>
+  <div id="lklead"><button type="button" class="save" id="pairb" onclick="pairOpen()">Pair a new fan</button>
+    <button type="button" class="save undo danger" onclick="unpairAll()">Unpair all followers</button></div>
+  <div id="lkfol" hidden>
+    <label>Follow<select id="fmode" onchange="$('foffrow').hidden=this.value!=='same';followSave()"><option value="same">Same level</option><option value="own">Own settings (leader's heart rate and power)</option></select></label>
+    <label id="foffrow">Level<select id="foff" onchange="followSave()"><option value="1">one higher (off when the leader is off)</option><option value="0">same as the leader</option><option value="-1">one lower</option><option value="-2">two lower</option></select></label>
+    <button type="button" class="save" id="repairb" hidden onclick="followAgain()">Pair again</button>
+    <button type="button" class="save undo" onclick="followStop()">Stop following (use own sensors)</button>
+  </div>
+  <div id="lkheard"></div>
+  <div class="msg" id="lmsg"></div>
+  </details>
+  <details class="grp"><summary>Maintenance</summary>
+  <h3>Backup</h3>
+  <div class="hint">Save the settings as a file (riders, thresholds, sensors, timing, Wi-Fi name) and restore them on
+  this fan or another one, for example after swapping the Pico. Passwords and keys only if you tick the box.</div>
+  <label>Include passwords and keys<input type="checkbox" id="bksec"></label>
+  <button type="button" class="save" onclick="bkDown()">Download settings</button>
+  <label class="filebtn">Restore from a file…<input type="file" id="bkf" accept=".json,application/json" onchange="bkRestore(this)"></label>
+  <div class="msg" id="bkmsg"></div>
+  <h3>Firmware update</h3>
+  <div class="hint">Pick a <i>wattwind-update-….tar</i> file. The fan turns off while the files come in, checks
+  every file, then restarts with the new version (about a minute; usually only a few files change). Your settings
+  stay. <b>Check for updates</b> asks GitHub from this phone or computer (not from the fan) whether there is a newer
+  version.</div>
+  <button type="button" class="save undo" id="ckgo" onclick="ckUp()">Check for updates</button>
+  <div class="cur" id="ckinfo"></div>
+  <label class="filebtn">Choose update file…<input type="file" id="upf" accept=".tar,application/x-tar" onchange="upPick(this)"></label>
+  <div class="cur" id="upinfo"></div>
+  <button type="button" class="save" id="upgo" hidden onclick="upGo()">Install</button>
+  <div class="msg" id="upmsg"></div>
+  <h3>Detailed recording</h3>
+  <div class="hint">For finding a problem: for 24 h the fan records every second what it gets (power, cadence, heart
+  rate) and what it does, plus its connections, in a file of its own. Start it, ride until the problem shows, then
+  download it and send it with your report. It stops by itself after 24 h and is deleted 7 days later (or with
+  Delete). It holds your heart rate: share it only with someone you trust.</div>
+  <div class="cur" id="dtinfo">No recording.</div>
+  <button type="button" class="save" id="dtgo" onclick="dtAct('start')">Start recording</button>
+  <button type="button" class="save undo" id="dtstop" hidden onclick="dtAct('stop')">Stop recording</button>
+  <button type="button" class="save" id="dtdl" hidden onclick="dtDown()">Download recording</button>
+  <button type="button" class="save undo danger" id="dtdel" hidden onclick="dtAct('delete')">Delete recording</button>
+  <div class="msg" id="dtmsg"></div>
+  <h3>Restart</h3>
+  <button type="button" class="save" onclick="reboot()">Reboot the fan</button>
+  <div class="msg" id="rmsg"></div>
+  </details>
+  <details class="grp"><summary class="dangertxt">Erase everything</summary>
+  <div class="hint">Before giving the fan away, or to start again: deletes all settings, riders, sensors, the Wi-Fi
+  network, PIN, link keys and the logbook. The fan restarts as new, with its own access point and the default
+  password. Firmware stays.</div>
+  <button type="button" class="save danger" onclick="eraseAll()">Erase everything</button>
+  <div class="msg" id="emsg"></div>
+  </details>
+  <div class="diag"><span id="diag"></span> · <a href="/api/log" onclick="logShow(0);return false">logbook</a></div>
+</details>
+</section>
+</main>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+<div class="unsaved" id="unsaved" hidden><span id="unsmsg">Unsaved changes</span><button type="button" class="go" onclick="saveCfg(null)">Save</button><button type="button" onclick="undoCfg()">Undo</button></div>
+<div class="logv" id="logv" hidden><div class="logbar"><b id="logh">Logbook</b><button type="button" onclick="dgDown()" title="the logbook plus status, settings (no passwords), memory and files: for asking for help">Download</button><button type="button" id="logo" onclick="logShow(!logOld)">Older</button><button type="button" onclick="$('logv').hidden=true">Close</button></div><pre id="logt"></pre></div>
+
+<script>
+var $=function(id){return document.getElementById(id)};
+var NAMES=['Off','Low','Medium','High'], st=null, F=$('f'), W=F, pinSet=false, host='wattwind';
+function txt(v,d){return v===null||v===undefined?'–':(d?v.toFixed(d):Math.round(v))}
+// Firmware update: the .tar is read here in the browser, then sent file by file in 4 KB pieces (updater.py)
+// Logbook and diagnostics need the settings PIN when one is set (sent as X-Pin; asked once, then remembered)
+function pfetch(url,again){
+  var p=localStorage.getItem('fanpin')||'';
+  return fetch(url,{headers:p?{'X-Pin':p}:{}}).then(function(r){
+    if(r.status!==403)return r;
+    return r.json().then(function(j){
+      localStorage.removeItem('fanpin');
+      if(!again&&!/try again/.test(j.error||'')){var q=prompt('Settings PIN');
+        if(q){localStorage.setItem('fanpin',q);return pfetch(url,true)}}
+      throw new Error(j.error||'PIN needed')})});
+}
+function dgDown(){
+  pfetch('/api/diagnostics').then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.blob()}).then(function(b){
+    var a=document.createElement('a');a.href=URL.createObjectURL(b);
+    a.download='wattwind-diagnostics-'+(host||'fan')+'-'+new Date().toISOString().slice(0,10)+'.txt';
+    document.body.appendChild(a);a.click();a.remove();
+  }).catch(function(e){$('logt').textContent='Download failed: '+e.message});
+}
+function bkDown(){
+  var b={secrets:$('bksec').checked};if(getPin())b.pin=getPin();
+  api('/api/backup',b).then(function(j){
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([JSON.stringify(j,null,1)],{type:'application/json'}));
+    a.download='wattwind-settings-'+(host||'fan')+'-'+new Date().toISOString().slice(0,10)+'.json';
+    document.body.appendChild(a);a.click();a.remove();
+    msg('bkmsg',j.secrets?'Saved, with passwords and keys: keep the file private.':'Saved (without passwords and keys).',true);
+  }).catch(function(e){msg('bkmsg',e.message)});
+}
+function bkRestore(inp){
+  var f=inp.files&&inp.files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(){
+    var b;try{b=JSON.parse(r.result)}catch(e){msg('bkmsg','Not a WattWind settings file.');return}
+    var from=b&&b.config&&b.config.hostname?' from '+b.config.hostname:'';
+    if(!confirm('Restore the settings'+from+'? Settings not in the file stay as they are. The fan restarts.')){inp.value='';return}
+    var d={backup:b};if(getPin())d.pin=getPin();
+    api('/api/restore',d).then(function(j){expectRestart();msg('bkmsg','Restored '+j.restored+' settings: the fan restarts, and this page reconnects by itself (about 30 s).',true)})
+      .catch(function(e){msg('bkmsg',e.message)}).then(function(){inp.value=''});
+  };
+  r.readAsText(f);
+}
+var UP=null;
+// Check for updates: the browser (it has the internet; the fan may not) asks GitHub for the latest release, only when
+// the button is pressed. A fork: its own account/repository here.
+var REPO='wattwind/wattwind';
+function ckUp(){
+  var e=$('ckinfo'),cur=st&&st.version,rel='https://github.com/'+REPO+'/releases/latest';
+  e.textContent='Asking GitHub…';$('ckgo').disabled=true;
+  fetch('https://api.github.com/repos/'+REPO+'/releases/latest',{credentials:'omit',cache:'no-store'}).then(function(r){
+    if(r.status===404)throw new Error('none');if(!r.ok)throw new Error('gh');return r.json()
+  }).then(function(j){
+    var v=String(j.tag_name||'').replace(/^v/,''),c;
+    if(!/^\d+\.\d+\.\d+/.test(v))throw new Error('gh');
+    if(/^https:\/\/github\.com\//.test(j.html_url||''))rel=j.html_url;
+    c=cur?vcmp(v,cur):1;e.textContent='';
+    if(c>0){
+      e.appendChild(document.createTextNode('Version '+v+' is available'+(cur?' (this fan: '+cur+')':'')+'. '));
+      var a=document.createElement('a');a.href=rel;a.target='_blank';a.rel='noopener';
+      a.textContent="What's new, and the update file";e.appendChild(a)}
+    else e.textContent=c===0?'Up to date: '+cur+' is the latest version.':'This fan runs '+cur+', newer than the latest release ('+v+').'
+  }).catch(function(x){
+    e.textContent=x.message==='none'?'No release found on GitHub.':x.message==='gh'?"GitHub didn't give an answer: try again later.":
+      "Couldn't reach GitHub. On the fan's own Wi-Fi this phone has no internet: try again on your home network."
+  }).then(function(){$('ckgo').disabled=false})}
+function tarFiles(buf){
+  var u=new Uint8Array(buf),out={},o=0;
+  function str(a,b){var s='';for(var i=a;i<b&&u[i];i++)s+=String.fromCharCode(u[i]);return s}
+  while(o+512<=u.length){
+    var name=str(o,o+100);if(!name)break;
+    var pre=str(o+345,o+500);if(pre)name=pre+'/'+name;
+    var size=parseInt(str(o+124,o+136).trim()||'0',8),t=u[o+156];
+    o+=512;
+    if(t===0||t===48)out[name.replace(/^\.\//,'')]=u.subarray(o,o+size);
+    o+=Math.ceil(size/512)*512;
+  }
+  return out;
+}
+function upPick(inp){
+  UP=null;$('upgo').hidden=true;$('upinfo').textContent='';msg('upmsg','');
+  var f=inp.files&&inp.files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(){
+    try{
+      var files=tarFiles(r.result),mf=files['manifest.json'];
+      if(!mf)throw new Error('not a WattWind update: no manifest.json in it');
+      var sg=files['manifest.sig'];
+      if(!sg)throw new Error('this update file is not signed (no manifest.sig): the fan would refuse it');
+      var mt=new TextDecoder().decode(mf),m=JSON.parse(mt),miss=[],sizes={},n=0,kb=0;
+      Object.keys(m.files||{}).concat(['manifest.json']).forEach(function(k){
+        if(!files[k])miss.push(k);else{sizes[k]=files[k].length;n++;kb+=files[k].length}});
+      if(miss.length)throw new Error('files missing in the update: '+miss.join(', '));
+      UP={m:m,mt:mt,sig:new TextDecoder().decode(sg).trim(),files:files,sizes:sizes};
+      $('upinfo').textContent=f.name+': installed '+(st?st.version:'?')+' → this file: '+m.version+(isTest(m.version)?' (a test version)':'')+' ('+n+' files, '+Math.round(kb/1024)+' KB).';
+      $('upgo').hidden=false;
+    }catch(e){msg('upmsg',e.message)}
+  };
+  r.onerror=function(){msg('upmsg','Could not read the file.')};
+  r.readAsArrayBuffer(f);
+}
+// Versions (semver.org): 1.0.1-test.2 is a test build of 1.0.1 and counts as older than 1.0.1 itself, so the
+// official release replaces test builds as a normal update. -1 / 0 / 1 like a sort.
+function vparse(v){var m=/^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.\-]+))?/.exec(String(v))||[];
+  return {n:[+m[1]||0,+m[2]||0,+m[3]||0],pre:m[4]?m[4].split('.'):null}}
+function vcmp(a,b){
+  a=vparse(a);b=vparse(b);var i,x,y,nx,ny;
+  for(i=0;i<3;i++)if(a.n[i]!==b.n[i])return a.n[i]<b.n[i]?-1:1;
+  if(!a.pre||!b.pre)return a.pre?-1:(b.pre?1:0);
+  for(i=0;i<Math.max(a.pre.length,b.pre.length);i++){
+    x=a.pre[i];y=b.pre[i];if(x===undefined)return -1;if(y===undefined)return 1;if(x===y)continue;
+    nx=/^\d+$/.test(x);ny=/^\d+$/.test(y);
+    if(nx&&ny)return +x<+y?-1:1;if(nx!==ny)return nx?-1:1;return x<y?-1:1}
+  return 0}
+function isTest(v){return /^\d+\.\d+\.\d+-/.test(String(v||''))}
+function upGo(){
+  if(!UP)return;
+  var older=st&&vcmp(UP.m.version,st.version)<0;
+  if(!confirm((older?'This is an OLDER version. ':'')+'Install '+UP.m.version+'? The fan turns off, and restarts when the files are in (about a minute).'))return;
+  var pin=getPin(),names=[],total=0,sent=0;
+  $('upgo').disabled=true;msg('upmsg','Starting…',true);
+  function piece(i,off){
+    if(i>=names.length)return api('/api/update/finish',pin?{pin:pin}:{});
+    var k=names[i],d=UP.files[k],c=d.subarray(off,off+4096);
+    function send(tries){
+      return fetch('/api/update/file?path='+encodeURIComponent(k)+'&offset='+off,{method:'POST',
+        headers:{'Content-Type':'application/octet-stream','X-Pin':pin},body:c}).then(function(r){return r.json().then(function(j){
+          if(!r.ok)throw new Error(j.error||('HTTP '+r.status));return j})},
+        function(e){if(tries>1)return new Promise(function(ok){setTimeout(ok,1500)}).then(function(){return send(tries-1)});throw e});
+    }
+    return send(5).then(function(){
+      sent+=c.length;msg('upmsg','Sending… '+Math.round(100*sent/Math.max(total,1))+' %',true);
+      return off+c.length>=d.length?piece(i+1,0):piece(i,off+c.length)})
+  }
+  var sb={manifest_text:UP.mt,sig:UP.sig,sizes:UP.sizes,full:!!UP.full};if(pin)sb.pin=pin;
+  api('/api/update/start',sb).then(function(r){
+      pin=sb.pin||'';names=r.send;names.forEach(function(k){total+=UP.sizes[k]});return piece(0,0)})
+    .then(function(r){UP=null;$('upgo').hidden=true;expectRestart();msg('upmsg','Checked and installed '+r.version+': the fan restarts now, and this page reconnects by itself (about a minute).',true)})
+    .catch(function(e){if(/differ/.test(e.message))UP.full=true;
+      msg('upmsg','Update stopped, nothing changed: '+e.message)})
+    .then(function(){$('upgo').disabled=false});
+}
+var logOld=0;
+function logShow(old){
+  logOld=old?1:0;$('logv').hidden=false;$('logh').textContent=old?'Logbook (older)':'Logbook';$('logo').textContent=old?'Newer':'Older';
+  var t=$('logt');t.textContent='loading…';
+  pfetch('/api/log'+(old?'?old=1':'')).then(function(r){return r.text()}).then(function(x){t.textContent=x||'(empty)';t.scrollTop=t.scrollHeight})
+    .catch(function(e){t.textContent='Could not load the logbook: '+e.message});
+}
+// Detailed recording (detail.py): what it shows and the buttons
+function days(t){return t>=172800?Math.round(t/86400)+' days':dur(t)}
+function dtShow(d){
+  $('dtinfo').textContent=!d?'No recording.':d.on?'Recording since '+d.started+': '+days(d.left_s)+' left, '+d.kb+' KB so far.'
+    :'Recording from '+d.started+' ('+d.kb+' KB): deleted in '+days(d.keep_s)+' (counted while the fan is on), unless you delete it now.';
+  $('dtgo').hidden=!!(d&&d.on);$('dtstop').hidden=!(d&&d.on);$('dtdl').hidden=!d;$('dtdel').hidden=!d;
+}
+function dtAct(a){
+  var d=st&&st.detail;
+  if(a==='start'&&d&&!confirm('Start a new recording? The previous one is replaced.'))return;
+  if(a==='delete'&&!confirm('Delete the recording?'))return;
+  var b={action:a};if(getPin())b.pin=getPin();
+  api('/api/detail',b).then(function(s){show(s);msg('dtmsg',a==='start'?'Recording for 24 h. Ride until the problem shows, then download it.':
+    a==='stop'?'Stopped. Download it and send it with your report.':'Deleted.',true)})
+    .catch(function(e){msg('dtmsg',e.message)});
+}
+function dtDown(){
+  pfetch('/api/detail').then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.blob()}).then(function(b){
+    var a=document.createElement('a');a.href=URL.createObjectURL(b);
+    a.download='wattwind-recording-'+(host||'fan')+'-'+new Date().toISOString().slice(0,10)+'.txt';
+    document.body.appendChild(a);a.click();a.remove();msg('dtmsg','Downloaded.',true);
+  }).catch(function(e){msg('dtmsg','Download failed: '+e.message)});
+}
+function diag(s){
+  var up=s.uptime||0,parts=['Firmware '+(s.version||'?')+(isTest(s.version)?' (test version)':'')+' (for board '+(s.board||'?')+')',
+    'running '+(up<60?up+' s':dur(up)),'last restart: '+(s.reset_reason||'?')];
+  if(s.files)parts.push('files: '+s.files);
+  if(s.rssi!=null)parts.push('Wi-Fi '+s.rssi+' dBm ('+(s.rssi>=-60?'good':s.rssi>=-72?'fair':'weak')+')');
+  if(s.box_temp!=null)parts.push('Pico chip '+s.box_temp+' °C');
+  if(s.detail&&s.detail.on)parts.push('detailed recording on');
+  if(s.hr_battery!=null)parts.push('heart-rate strap battery '+s.hr_battery+' %');
+  if(s.power_battery!=null)parts.push('power sensor battery '+s.power_battery+' %');
+  $('diag').textContent=parts.join(' · ');
+}
+
+function dur(t){var h=Math.floor(t/3600),m=Math.ceil((t%3600)/60);if(m==60){h++;m=0}
+  return h?h+' h '+m+' min':(m?m+' min':'less than a minute')}
+
+function dismiss(){api('/api/notice/dismiss',{}).then(show).catch(function(){})}
+
+function nice(t){return /Failed to fetch|NetworkError|Load failed/.test(t)?'No answer from the fan: check the Wi-Fi, then try again.':t}   // the browser's words -> ours
+function msg(id,t,ok){
+  if(nice(t)!==t){if(document.body.classList.contains('off'))return;t=nice(t)}
+  var e=$(id);e.textContent=t;e.className='msg '+(ok?'ok':'err');clearTimeout(e._t);
+  if(ok&&t&&(id==='smsg'||id==='bmsg'))e._t=setTimeout(function(){if(e.textContent===t)e.textContent=''},6000);   // confirmations fade; errors and Wi-Fi / reboot steps stay
+  if(t&&!seen(e))toast(t,ok)}
+function seen(e){                     // is this message line on screen (not folded away, not scrolled off, not under the bar)?
+  if(!e.offsetParent)return false;
+  var r=e.getBoundingClientRect(),b=innerHeight-($('unsaved').hidden?0:70);
+  return r.top>=0&&r.bottom<=b}
+function toast(t,ok){var e=$('toast');e.textContent=t;e.className='toast'+(ok?'':' err');e.hidden=false;pin();clearTimeout(e._t);
+  e._t=setTimeout(function(){e.hidden=true},ok?4000:7000)}
+document.querySelectorAll('.msg').forEach(function(e){e.setAttribute('role','status')});
+// Keep the Unsaved bar and the pop-up inside what is really visible. On phones the visible part moves and shrinks
+// with zoom, the keyboard and the browser's toolbars (iPhone Safari), while position:fixed follows the page's layout;
+// visualViewport says where the visible part is. Both are placed in it at their normal size (undoing the zoom).
+function pin(){
+  var v=window.visualViewport;if(!v)return;
+  [['unsaved',0],['toast',1]].forEach(function(a){
+    var e=$(a[0]);if(e.hidden)return;
+    var k=1/v.scale,w=Math.min(504,v.width*v.scale-24);
+    e.style.cssText='left:0;top:0;right:auto;bottom:auto;margin:0;transform-origin:0 0;width:'+w+'px';
+    var x=v.offsetLeft+(v.width-w*k)/2,y=a[1]?v.offsetTop+12*k:v.offsetTop+v.height-(e.offsetHeight+12)*k;
+    e.style.transform='translate('+x+'px,'+y+'px) scale('+k+')';
+  });
+}
+if(window.visualViewport){visualViewport.addEventListener('resize',pin);visualViewport.addEventListener('scroll',pin)}
+addEventListener('scroll',pin);addEventListener('resize',pin);
+$('toast').addEventListener('click',function(){this.hidden=true});
+
+// The settings PIN: the one this device remembers (kept after it worked once). Every command goes through api():
+// when the fan says the PIN is missing or wrong, it asks once and tries again (one rule for every button).
+function getPin(){return localStorage.getItem('fanpin')||''}
+function api(path,body,again){
+  var o=body?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:{};
+  return fetch(path,o).then(function(r){return r.json().then(function(j){
+    if(!r.ok){
+      var e=j.error||('HTTP '+r.status),pinErr=r.status===403&&/^wrong PIN$|PIN needed/.test(e);
+      if(pinErr)localStorage.removeItem('fanpin');
+      if(j.setup)$('setupc').hidden=false;
+      if(pinErr&&body&&!again){
+        var q=prompt((body.pin?'Wrong PIN. ':'')+(/fan buttons/.test(e)?'PIN for the fan buttons':'Settings PIN'));
+        if(q){body.pin=q;return api(path,body,true)}
+        throw new Error('PIN needed: nothing was changed.')}
+      throw new Error(e)}
+    if(body&&body.pin)localStorage.setItem('fanpin',body.pin);
+    return j})})
+}
+
+function setupGo(){
+  var ap=$('su_ap').value,p=$('su_pin').value,o=$('su_old').value;
+  if(ap!==$('su_ap2').value){msg('sumsg','The two passwords differ.');return}
+  if(p!==$('su_pin2').value){msg('sumsg','The two PINs differ.');return}
+  var d={ap_password:ap};if(p)d.new_pin=p;if(o)d.pin=o;
+  api('/api/setup',d).then(function(){
+    localStorage.setItem('fanpin',p||o);
+    $('setupc').hidden=true;$('su_ap').value=$('su_ap2').value=$('su_pin').value=$('su_pin2').value=$('su_old').value='';
+    alert('Done. The new access point password applies the next time the fan starts.');
+    if(!$('set').hidden&&$('set').open)loadCfg();
+  }).catch(function(e){msg('sumsg',e.message)});
+}
+
+function show(s){
+  st=s;
+  if(s.setup&&$('setupc').hidden){
+    $('setupc').hidden=false;
+    api('/api/config').then(function(c){         // an older fan with a PIN already: ask for it, a new one is optional
+      $('su_oldrow').hidden=!c.pin_set;$('su_plab').textContent=c.pin_set?'New PIN (empty: keep yours)':'Settings PIN (4–16 characters)'});
+  }
+  if(!s.setup)$('setupc').hidden=true;
+  $('wbtn').textContent=s.wifi==='ap'?'Test Wi-Fi':'Save Wi-Fi and reboot';
+  $('lvl').textContent=s.level;
+  $('lvlname').textContent=NAMES[s.level];
+  var m=$('mode');m.textContent={auto:'Auto',manual:'Manual',follow:'Follow'}[s.mode]||s.mode;m.className='badge '+(s.mode==='follow'?'auto':s.mode);
+  var n='',info=true;
+  if(s.updating){n='Firmware update in progress: fan off.';info=false}
+  else if(s.target!==s.level){n='switching to '+NAMES[s.target]+'…';info=false}
+  else if(s.mode==='follow'&&s.follow&&s.follow.unpaired)n=s.follow.name+' has unpaired its followers: holding, then stepping down. Settings → Linked fans: Pair again.';
+  else if(s.mode==='follow'&&s.follow)n=s.follow.fresh?'Following '+s.follow.name+(s.follow.offset>0?' (one higher)':s.follow.offset<0?' ('+(-s.follow.offset)+' lower)':'')+'.':s.follow.name+' not heard: holding, then stepping down.';
+  else if(s.mode==='auto'&&s.power==null&&s.hr==null)n=s.follow?'Waiting for '+s.follow.name+"'s sensors.":'Waiting for sensors: the fan starts when you ride.';
+  else if(s.mode==='manual'&&s.off_left_s!=null)n='Off in '+dur(s.off_left_s)+'.';
+  else if(s.mode==='manual'&&s.manual_left_s!=null)n='Back to Auto in '+dur(s.manual_left_s)+'.';
+  $('note').textContent=n;$('note').className='note'+(info?' info':'');
+  diag(s);dtShow(s.detail);
+  $('notice').hidden=!s.notice;$('ntext').textContent=s.notice||'';
+  $('pw').textContent=txt(s.power);$('cad').textContent=txt(s.cadence);
+  $('hr').textContent=txt(s.hr);$('dem').textContent=txt(s.demand,2);
+  $('dhr').className='dot'+(s.hr_connected&&!s.hr_off?' on':'');$('dhr').title=s.hr_connected&&!s.hr_off?'connected':'not connected';
+  $('deml').textContent='demand'+({power:' · power',hr:' · heart rate',both:' · both'}[s.basis]||'');
+  $('dpw').className='dot'+(s.power_connected?' on':'');$('dpw').title=s.power_connected?'connected':'not connected';
+  $('rname').textContent=s.rider?'Rider: '+s.rider:'';
+  $('nhr').textContent=(s.hr_name||'HR')+(s.hr_off?' (not worn)':'')+(s.hr_share==='connected'?' · shared':'');
+  $('sharest').textContent=s.hr_share==='connected'?'Sharing: an app or watch is connected to '+s.hr_share_name+'.':
+    s.hr_share==='waiting'?'Waiting: in your app or watch, add a heart-rate sensor and choose '+s.hr_share_name+'.':'';$('npw').textContent=s.power_name||'Power';
+  var fs=!!(s.follow&&s.follow.mode==='same');$('dlab').textContent=fs?'Leader:':'Sensors:';
+  $('snhr').hidden=$('snpw').hidden=fs;$('snld').hidden=!fs;
+  if(fs){$('dld').className='dot'+(s.follow.fresh?' on':'');$('nld').textContent=s.follow.name}
+  var w=[];
+  if(s.hr_battery!=null&&s.hr_battery<=15)w.push('Heart-rate strap battery '+s.hr_battery+' %: replace soon.');
+  if(s.power_battery!=null&&s.power_battery<=15)w.push('Power sensor battery '+s.power_battery+' %: replace soon.');
+  if(s.box_temp!=null&&s.box_temp>=70)w.push('The controller is running hot (chip '+s.box_temp+' °C): give the box air, keep it out of the sun.');
+  if(s.files&&s.files!=='ok'&&s.files.indexOf('not checked')<0)w.push('Firmware files differ from their list ('+s.files+'): copy the firmware again.');
+  if(s.safe_start)w.push('Safe start: the fan started with default ride settings after repeated errors. Install the latest firmware (Settings → Maintenance) or Restart.');
+  if(isTest(s.version))w.push('Test version '+s.version+': made for trying a fix, not an official release. Install the official one when it is out.');
+  $('warn').textContent=w.join(' ');
+  netInfo(s);
+  $('fname').textContent=s.name?'· '+s.name:'';   // which fan this page controls (several fans: wattwind, wattwind2)
+  $('bA').disabled=!s.auto_available;$('bA').title=s.auto_available?'':'auto mode is not available yet';
+  if(!pending)$('bA').className=(s.mode==='auto'||s.mode==='follow')?'on':'';
+  $('bA').textContent=(s.follow&&s.follow.mode==='same')?'Follow':'Auto';
+  $('nudge').hidden=s.mode!=='auto';
+  $('timer').hidden=!(s.mode==='manual'&&s.target>0);$('tcancel').hidden=s.off_left_s==null;
+  var nv=s.nudge||0;
+  $('ntxt').textContent=nv?'Auto '+(nv>0?'+':'−')+Math.abs(nv)+(Math.abs(nv)>1?' levels':' level')+' this ride':'Auto as calculated';
+  if(!pending)for(var i=0;i<4;i++)$('b'+i).className=(s.mode==='manual'&&s.target===i)?'on':'';
+}
+
+var miss=0,expect=null;   // expect: a restart we asked for (reboot, update, restore, follow): {up, ver}
+function expectRestart(){if(st)expect={up:st.uptime,ver:st.version}}
+function offline(on){
+  document.body.classList.toggle('off',on);$('offl').hidden=!on;
+  if(on){$('offl').textContent=expect?'The fan is restarting: this page reconnects by itself…':
+    'No answer from the fan: the values below are not live. Trying again…';$('netinfo').textContent='No answer from the fan right now.'}
+}
+function poll(){
+  api('/api/status').then(function(s){
+    miss=0;offline(false);
+    if(expect&&(s.uptime<expect.up||s.version!==expect.ver)){
+      toast('The fan is back'+(s.version!==expect.ver?': version '+s.version:'')+'.',true);expect=null;
+      if($('set').open){if(!markDirty())loadCfg();loadLink()}
+    }
+    show(s)})
+    .catch(function(){if(++miss>=2)offline(true)})
+    .then(function(){setTimeout(poll,1500)});
+}
+
+// Settings → Wi-Fi and address: where the fan is and how to open it (Android often can't open .local: the IP)
+function netInfo(s){
+  var e=$('netinfo'),q=s.rssi==null?'':(s.rssi>=-60?'good':s.rssi>=-72?'fair':'weak');
+  if(s.wifi==='sta')e.innerHTML='Connected to <b>'+esc(s.ssid)+'</b>'+(q?' (signal '+q+', '+s.rssi+' dBm)':'')+'. This fan: <b>http://'+esc(host)+
+    '.local</b> or <b>http://'+esc(s.ip)+'</b> (bookmark the address).';
+  else if(s.wifi==='ap')e.innerHTML='On its own Wi-Fi <b>'+esc(s.ssid)+'</b>. This fan: <b>http://'+esc(s.ip||'192.168.4.1')+'</b>.';
+  else e.textContent='Connecting to '+(s.ssid||'Wi-Fi')+'…';
+}
+function wscan(){
+  var b=$('wscanb');b.disabled=true;b.textContent='Looking…';
+  api('/api/wifi/scan').then(function(r){
+    var nets=r.networks||[];
+    $('wlist').innerHTML=nets.length?nets.map(function(n){
+      var q=n.rssi>=-60?'good':n.rssi>=-72?'fair':'weak';
+      return '<div class="dev"><div>'+esc(n.ssid)+'<small>signal '+q+' ('+n.rssi+' dBm)'+(n.secure?' · password':' · open')+
+        '</small></div><button type="button" data-ssid="'+esc(n.ssid).replace(/"/g,'&quot;')+'">Use</button></div>';
+    }).join(''):'<div class="dev">No networks found. Only 2.4 GHz networks show up.</div>';
+  }).catch(function(e){msg('wmsg',e.message)}).then(function(){b.disabled=false;b.textContent='Find networks'});
+}
+
+$('wlist').addEventListener('click',function(ev){var t=ev.target;if(t.dataset&&t.dataset.ssid!==undefined){W.ssid.value=t.dataset.ssid;W.password.value='';W.password.focus();$('wlist').innerHTML='';}});
+
+function resetTo(w){
+  if(markDirty())return keepEdits(function(){resetTo(w)});
+  var sel=$('rsel'),who=sel.options.length?sel.options[sel.selectedIndex].text:'this rider';
+  if(!confirm(w==='rider'?'Reset '+who+"'s FTP, heart rate, Decide by, fan response and step levels to the defaults? (Name and strap stay.)"
+    :'Reset the timing settings (step times, timeouts, highest level) to the defaults?'))return;
+  var b={what:w};if(getPin())b.pin=getPin();
+  api('/api/reset',b).then(function(){loadCfg();msg('smsg',w==='rider'?who+"'s values are back to the defaults.":'Timing settings are back to the defaults.',true)}).catch(function(e){msg('smsg',e.message)});
+}
+
+function rider(a,i){
+  if(markDirty())return keepEdits(function(){rider(a,i)},function(){$('rsel').value=curProfile});
+  var sel=$('rsel'),cur=+sel.value,b={action:a},p;
+  if(a==='select')b.index=i;
+  else if(a==='add'){p=prompt('Name of the new rider');if(!p)return;b.name=p}
+  else if(a==='rename'){p=prompt('New name',sel.options[sel.selectedIndex].text);if(!p)return;b.index=cur;b.name=p}
+  else if(a==='delete'){if(!confirm('Delete rider '+sel.options[sel.selectedIndex].text+'?'))return;b.index=cur}
+  var pin=getPin();if(pin)b.pin=pin;
+  api('/api/profile',b).then(function(){loadCfg();msg('smsg',a==='select'?'Rider changed.':'Done.',true)})
+    .catch(function(e){msg('smsg',e.message);loadCfg()});
+}
+
+function timer(m){
+  var b={minutes:m},p=getPin();if(p)b.pin=p;
+  api('/api/timer',b).then(function(s){show(s);$('cmsg').textContent=''}).catch(function(e){msg('cmsg',e.message)});
+}
+
+function nudge(d){
+  var n=Math.max(-2,Math.min(2,(st&&st.nudge||0)+d));
+  setMode('auto',undefined,false,n);
+}
+
+var pending=0;     // a fan button was pressed and its answer isn't back: show() leaves the buttons alone
+function setMode(mode,level,again,nd){
+  var b={mode:mode,level:level},p=getPin();if(p)b.pin=p;
+  if(nd!==undefined)b.nudge=nd;
+  if(nd===undefined){
+    $('bA').className=mode==='manual'?'':'on pend';
+    for(var i=0;i<4;i++)$('b'+i).className=(mode==='manual'&&level===i)?'on pend':'';
+  }
+  pending++;
+  api('/api/mode',b).then(function(s){pending--;show(s);$('cmsg').textContent=''})
+    .catch(function(e){pending--;if(st)show(st);msg('cmsg',e.message)});
+}
+
+function num(v){return v===''?NaN:Number(v)}
+
+function loadCfg(){
+  api('/api/config').then(function(c){
+    ['ftp','hr_max','hr_rest','dwell_up_s','dwell_down_s','manual_timeout_min','idle_off_min','max_level','hostname','response','use']
+      .forEach(function(k){F[k].value=c[k]});
+    for(var i=0;i<3;i++){F['up'+i].value=c.up_thresholds[i];F['dn'+i].value=c.down_thresholds[i]}
+    W.ssid.value=c.wifi_ssid;
+    $('ahr').textContent=c.hr_addr||'first one found';$('apw').textContent=c.power_addr||'first one found';
+    $('hrshare').checked=!!c.hr_share;
+    pinSet=c.pin_set;host=c.hostname;$('apdef').hidden=!c.ap_default;$('nopin').hidden=c.pin_set;
+    $('ahrwho').textContent=(c.profiles&&c.profiles.length>1)?' ('+c.profiles[c.profile].name+')':'';
+    $('rsel').innerHTML=(c.profiles||[]).map(function(p,i){return '<option value="'+i+'"'+(i===c.profile?' selected':'')+'>'+esc(p.name)+'</option>'}).join('');$('rdel').disabled=(c.profiles||[]).length<2;$('rdel').title=$('rdel').disabled?"The last rider can't be deleted":'';F.pin_for_control.checked=!!c.pin_for_control;
+    F.ap_password.value=F.ap_password2.value=F.new_pin.value=F.new_pin2.value='';
+    curProfile=c.profile;snap();
+  }).catch(function(e){msg('smsg',e.message)});
+}
+
+// Unsaved changes. The form remembers what the fan has (after each load); a changed field gets a coloured edge and a
+// bar at the bottom offers Save / Undo. Anything that reloads the form asks first (keepEdits), and so does leaving
+// the page. Decide by and Fan response save at once: a choice from a list is always a whole, valid value; numbers
+// wait for Save (half-typed values, the step levels checked as a pair, the PIN).
+var TRACK=['ftp','hr_max','hr_rest','up0','up1','up2','dn0','dn1','dn2','dwell_up_s','dwell_down_s','manual_timeout_min',
+  'idle_off_min','max_level','hostname','pin_for_control','ap_password','ap_password2','new_pin','new_pin2'],
+  saved=null,curProfile=0,savedSel={};
+function fval(k){var e=F[k];return e.type==='checkbox'?e.checked:e.value}
+function snap(){F.querySelectorAll('.bad').forEach(function(e){e.classList.remove('bad')});saved={};TRACK.forEach(function(k){saved[k]=fval(k)});savedSel={use:F.use.value,response:F.response.value};markDirty()}
+function markDirty(){
+  var n=0;
+  TRACK.forEach(function(k){var d=!!saved&&fval(k)!==saved[k];F[k].classList.toggle('chg',d);if(d)n++});
+  $('unsaved').hidden=!n;document.body.style.paddingBottom=n?'80px':'';pin();
+  return n;
+}
+function undoCfg(){loadCfg();msg('smsg','Changes undone: showing the saved settings.',true)}
+function keepEdits(next,cancel){
+  if(!markDirty()){next();return}
+  if(confirm('You have unsaved settings. Save them first?\n\nOK = save them, Cancel = discard them.'))saveCfg(null,next,cancel);
+  else{TRACK.forEach(function(k){var e=F[k];if(e.type==='checkbox')e.checked=saved[k];else e.value=saved[k]});markDirty();next()}
+}
+function autoSave(k){
+  var d={},name=k==='use'?'Decide by':'Fan response';d[k]=F[k].value;
+  if(getPin())d.pin=getPin();
+  api('/api/config',d).then(function(){savedSel[k]=d[k];msg('smsg','Saved: '+name+'.',true)})
+    .catch(function(e){F[k].value=savedSel[k];msg('smsg',name+' not saved: '+e.message)});
+}
+F.addEventListener('input',function(){$('unsmsg').textContent='Unsaved changes';markDirty()});
+F.addEventListener('change',markDirty);
+window.addEventListener('beforeunload',function(e){if(markDirty()||UP){e.preventDefault();e.returnValue=''}});   // unsaved settings, or an update file picked but not installed
+
+// Which field a message is about (the fan's messages start with the field's name), so it can be marked
+var FIELDS=[[/^FTP/,'ftp'],[/^HR max/,'hr_max'],[/^HR rest/,'hr_rest'],[/^Min\. time before step up/,'dwell_up_s'],
+  [/^Min\. time before step down/,'dwell_down_s'],[/^Manual/,'manual_timeout_min'],[/^Auto: off/,'idle_off_min'],
+  [/^Auto: highest/,'max_level'],[/^Hostname/,'hostname'],[/^Access point password/,'ap_password'],
+  [/access point passwords differ/,'ap_password2'],[/^Settings PIN/,'new_pin'],[/new PINs differ/,'new_pin2'],
+  [/^Fan buttons need/,'pin_for_control']];
+function fieldOf(t){
+  var m=/^Level (\d): step down/.exec(t);if(m)return 'dn'+(m[1]-1);
+  m=/^Step (up|down): level (\d)/.exec(t);if(m)return (m[1]==='up'?'up':'dn')+(m[2]-1);
+  m=/^Step (up|down): each/.exec(t);if(m)return m[1]==='up'?'up0':'dn0';
+  for(var i=0;i<FIELDS.length;i++)if(FIELDS[i][0].test(t))return FIELDS[i][1];
+  return null}
+function openTo(e){for(var d=e.closest('details');d;d=d.parentElement&&d.parentElement.closest('details'))d.open=true}
+function markBad(k){
+  if(!k||!F[k])return;var e=F[k];
+  openTo(e);e.classList.add('bad');e.scrollIntoView({block:'center'});e.focus({preventScroll:true})}
+F.addEventListener('input',function(ev){if(ev.target.classList)ev.target.classList.remove('bad')});
+function saveCfg(ev,done,fail){
+  if(ev)ev.preventDefault();
+  function err(t,k){t=nice(t);msg('smsg',t);if(!$('unsaved').hidden)$('unsmsg').textContent=t;markBad(k||fieldOf(t));if(fail)fail()}
+  var bad=F.querySelector(':invalid');
+  if(bad){openTo(bad);err((bad.closest('label')?bad.closest('label').firstChild.textContent.trim()+': ':'')+
+    (bad.validationMessage||'check this value'),bad.name);return}
+  var d={};
+  ['ftp','hr_max','hr_rest','dwell_up_s','dwell_down_s','manual_timeout_min','idle_off_min','max_level']
+    .forEach(function(k){d[k]=num(F[k].value)});
+  d.up_thresholds=[0,1,2].map(function(i){return num(F['up'+i].value)});
+  d.down_thresholds=[0,1,2].map(function(i){return num(F['dn'+i].value)});
+  d.hostname=F.hostname.value.trim().toLowerCase();
+  d.response=F.response.value;d.use=F.use.value;
+  d.pin_for_control=F.pin_for_control.checked;
+  if(F.ap_password.value!==F.ap_password2.value){err('The two access point passwords differ.');return}
+  if(F.new_pin.value!==F.new_pin2.value){err('The two new PINs differ.');return}
+  if(F.ap_password.value)d.ap_password=F.ap_password.value;
+  if(F.new_pin.value)d.settings_pin=F.new_pin.value;
+  if(getPin())d.pin=getPin();
+  api('/api/config',d).then(function(c){
+    msg('smsg',c.changed.length?'Saved: '+c.changed.join(', ')+'.':'No changes.',true);
+    if(d.settings_pin)localStorage.setItem('fanpin',d.settings_pin);
+    F.ap_password.value=F.ap_password2.value=F.new_pin.value=F.new_pin2.value='';
+    if(c.changed.indexOf('hostname')>=0||c.changed.indexOf('ap_password')>=0)
+      msg('smsg','Saved. Hostname and AP password apply after the next reboot.',true);
+    snap();loadCfg();if(done)done();
+  }).catch(function(e){err(e.message)});
+}
+
+function saveWifi(ev){
+  if(ev)ev.preventDefault();
+  var d={ssid:W.ssid.value.trim(),password:W.password.value};
+  var wp=getPin();if(wp)d.pin=wp;
+  $('wnew').innerHTML='';
+  if(st&&st.wifi==='ap'&&d.ssid){testWifi(d);return}   // on the fan's own network: test first
+  if(!confirm('Save Wi-Fi settings and reboot? The fan turns off.'))return;
+  switchWifi(d,'');
+}
+
+function switchWifi(d,ip){
+  api('/api/wifi',d).then(function(){
+    $('wnew').innerHTML='';
+    msg('wmsg',ip?'Switching now. Put your phone back on '+d.ssid+', then open http://'+ip+' (about 30 s).'
+      :'Saved. Rebooting: reconnect in about 30 s'+(d.ssid?' on '+d.ssid:'')+'.',true);
+  }).catch(function(e){msg('wmsg',e.message)});
+}
+
+function testWifi(d){
+  var n=0;
+  msg('wmsg','Trying '+d.ssid+' (up to 20 s). The fan\'s own network stays on.',true);
+  function done(t){
+    if(t.state!=='ok'){msg('wmsg','Could not join '+d.ssid+': '+t.error+'. Check the name and password.');return}
+    msg('wmsg','',true);
+    $('wnew').innerHTML='<div class="newip">Connected to <b>'+esc(d.ssid)+'</b>. After switching, open:<br>'+
+      '<a href="http://'+t.ip+'">http://'+t.ip+'</a><br>(or http://'+esc(host)+'.local). The router usually '+
+      'keeps this address: bookmark it or write it down.'+
+      '<button type="button" class="save" id="wgo">Save and switch</button></div>';
+    $('wgo').onclick=function(){switchWifi(d,t.ip)};
+  }
+  function wait(){
+    setTimeout(function(){
+      api('/api/wifi/test').then(function(t){if(t.state==='testing'&&n++<30)wait();else done(t)})
+        .catch(function(){if(n++<30)wait();else msg('wmsg','Lost the connection to the fan. Rejoin its network and try again.')});
+    },1500);
+  }
+  api('/api/wifi/test',d).then(wait).catch(function(e){msg('wmsg',e.message)});
+}
+
+function reboot(){
+  if(!confirm('Reboot the fan now? It turns off and restarts (about 30 s).'))return;
+  var d={};if(getPin())d.pin=getPin();
+  api('/api/reboot',d).then(function(){
+    expectRestart();msg('rmsg','Rebooting: this page reconnects by itself (about 30 s).',true);
+  }).catch(function(e){msg('rmsg',e.message)});
+}
+
+function eraseAll(){
+  if(!confirm('Erase everything? Settings, riders, sensors, Wi-Fi, PIN and logbook are deleted, and the fan restarts as new. This cannot be undone (a settings backup can bring the settings back).'))return;
+  var d={confirm:'erase'};if(getPin())d.pin=getPin();
+  api('/api/erase',d).then(function(){
+    msg('emsg','Erasing and restarting. The fan comes back with its own access point (WattWind-…, password wattwind).',true);
+  }).catch(function(e){msg('emsg',e.message)});
+}
+
+function loadLink(){
+  api('/api/link').then(function(L){
+    var f=L.follow;
+    $('lkfol').hidden=!f;$('lklead').hidden=!!f;$('sensblk').hidden=!!f;
+    $('lkrole').textContent=f?(f.unpaired?'This fan follows '+f.name+', but '+f.name+' has unpaired its followers. '+
+        'To follow it again: press Pair a new fan on '+f.name+', then Pair again here.'
+        :'This fan follows '+f.name+(f.fresh?'':' (not heard right now)')+'. Its Bluetooth is off.')
+      :'This fan uses its own sensors.'+(L.id?' It is '+L.id+' on the network:':'')+' other WattWinds can follow it. '+
+        'Followers only listen, so they are not listed here; each one shows on its own page whether it hears this fan.';
+    $('repairb').hidden=!(f&&f.unpaired);
+    if(f&&!lkBusy){$('fmode').value=f.mode;$('foff').value=String(f.offset);$('foffrow').hidden=f.mode!=='same'}
+    var pl=L.pair_left_s;$('pairb').textContent=pl?'Pairing open: '+pl+' s':'Pair a new fan';
+    var h=(L.heard||[]).filter(function(x){return !f||x.id!==st.link_id});
+    $('lkheard').innerHTML=f?'':(h.length?'<div class="hint">Other leaders on this network (to follow one):</div>'+h.map(function(x){
+      return '<div class="dev"><div>'+esc(x.name||x.id)+'<small>'+esc(x.id)+' · '+esc(x.ip)+'</small></div>'+
+        '<button type="button" data-fid="'+esc(x.id)+'">Follow</button></div>'}).join('')
+      :'<div class="hint">No other leader heard on this network (only needed to follow one).</div>');
+  }).catch(function(e){if(!(e instanceof TypeError))msg('lmsg',e.message)});   // background refresh: no answer = the red line at the top
+}
+function pairOpen(){
+  var b={};if(getPin())b.pin=getPin();
+  api('/api/link/pair',b).then(function(){msg('lmsg','Pairing open for 60 s: on the other fan press Follow next to this one.',true);loadLink()})
+    .catch(function(e){msg('lmsg',e.message)});
+}
+var lkBusy=false;    // a follow change is being saved: the 3 s refresh leaves the dropdowns alone
+function followPost(b,done){
+  if(getPin())b.pin=getPin();
+  lkBusy=true;
+  api('/api/follow',b).then(function(r){
+    if(r.reboot){expectRestart();msg('lmsg',done+' The fan restarts: this page reconnects by itself (about 30 s).',true)}else{msg('lmsg','Saved.',true)}
+  }).catch(function(e){msg('lmsg',e.message)}).then(function(){lkBusy=false;loadLink()});
+}
+function followSave(){followPost({id:(st.follow&&st.follow.id)||'',mode:$('fmode').value,offset:+$('foff').value},'')}
+function unpairAll(){
+  if(!confirm('Unpair all followers? This fan gets a new key: every fan following it holds its level for a minute, then turns off. Pair again the ones you want.'))return;
+  var b={};if(getPin())b.pin=getPin();
+  api('/api/link/unpair',b).then(function(){msg('lmsg','Followers unpaired. To link a fan again: Pair a new fan here, then Pair again (or Follow) on it.',true);loadLink()})
+    .catch(function(e){msg('lmsg',e.message)});
+}
+function followAgain(){followPost({id:st.follow.id,pair:true,mode:$('fmode').value,offset:+$('foff').value},'')}
+function followStop(){if(confirm("Stop following and use this fan's own sensors?"))followPost({id:''},'Using own sensors again.')}
+$('lkheard').addEventListener('click',function(ev){var t=ev.target;if(t.dataset&&t.dataset.fid){
+  if(confirm('Follow '+t.parentNode.firstChild.firstChild.textContent+'? Press Pair a new fan on it first. This fan restarts without Bluetooth.'))
+    followPost({id:t.dataset.fid,mode:'same',offset:0},'Now following.')}});
+setInterval(function(){if($('set').open)loadLink()},3000);
+
+function esc(t){var d=document.createElement('div');d.textContent=t;return d.innerHTML}
+
+// closing Settings keeps what was typed but drops scan results: they are snapshots and go stale
+$('set').addEventListener('toggle',function(){if(!$('set').open){$('wlist').innerHTML='';$('devs').innerHTML='';[].forEach.call(document.querySelectorAll('#set .msg'),function(m){m.textContent=''});}});
+
+function scan(){
+  var b=$('scanb');b.disabled=true;b.textContent='Searching (about 5 s)…';$('devs').innerHTML='';
+  api('/api/scan').then(function(r){
+    if(!r.devices.length){msg('bmsg','No heart rate or power sensors found. Is the sensor awake?');return}
+    $('bmsg').textContent='';
+    $('devs').innerHTML=r.devices.map(function(d){
+      var t=d.types.map(function(x){return x==='hr'?'HR':'power'}).join(' + ');
+      var btn=d.types.map(function(x){
+        return '<button type="button" data-key="'+x+'_addr" data-addr="'+d.addr+'">Use for '+(x==='hr'?'HR':'power')+'</button>'}).join('');
+      return '<div class="dev"><div>'+esc(d.name||'(no name)')+'<small>'+d.addr+' · '+t+
+        (d.connected?' · connected':(d.rssi!==null?' · '+d.rssi+' dBm':''))+'</small></div><div>'+btn+'</div></div>';
+    }).join('');
+  }).catch(function(e){msg('bmsg',e.message)}).then(function(){b.disabled=false;b.textContent='Find sensors'});
+}
+
+$('devs').addEventListener('click',function(ev){
+  var b=ev.target;if(b.dataset&&b.dataset.key)pick(b.dataset.key,b.dataset.addr);
+});
+
+function shareSave(){
+  var on=$('hrshare').checked,d={hr_share:on};if(getPin())d.pin=getPin();
+  api('/api/config',d).then(function(){
+    msg('shmsg',on?'Saved: the fan now shows itself as a heart-rate sensor (within a few seconds).':'Saved: heart rate sharing off.',true)})
+    .catch(function(e){$('hrshare').checked=!on;msg('shmsg','Not saved: '+e.message)});
+}
+
+function pick(key,addr){
+  if(markDirty())return keepEdits(function(){pick(key,addr)});
+  if(!addr&&!confirm('Forget this '+(key==='hr_addr'?'heart-rate strap':'power sensor')+'? The next one found is used, which could be a neighbour\'s.'))return;
+  var d={};d[key]=addr;if(getPin())d.pin=getPin();
+  api('/api/config',d).then(function(){
+    msg('bmsg',addr?'Saved. The fan connects to it within a few seconds.':'Forgotten: the first sensor found will be used.',true);
+    loadCfg()}).catch(function(e){msg('bmsg',e.message)});
+}
+
+$('set').addEventListener('toggle',function(){if(this.open){if(!markDirty())loadCfg();loadLink()}});   // unsaved edits stay
+poll();
+</script>
+</body>
+</html>

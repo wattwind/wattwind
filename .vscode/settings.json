@@ -1,0 +1,30 @@
+{
+    "python.languageServer": "Pylance",
+    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.diagnosticSeverityOverrides": {
+        "reportMissingModuleSource": "none"
+    },
+    "python.terminal.activateEnvironment": false,
+    "micropico.openOnStart": true,
+    "micropico.autoConnect": false,
+    "micropico.syncFolder": "firmware",
+    "python.analysis.typeshedPaths": [
+        "~/.micropico-stubs/included"
+    ],
+    "python.analysis.extraPaths": [
+        "~/.micropico-stubs/included"
+    ],
+    "micropico.pyIgnore": [
+        "tests",
+        "__pycache__",
+        ".pytest_cache",
+        "config.json",
+        "pytest.ini",
+        "relay_test.py",
+        "README.md",
+        "lib/microdot/LICENSE.txt",
+        "lib/microdot/README.txt",
+        "lib/aioble/LICENSE.txt",
+        "lib/aioble/README.txt"
+    ]
+}
