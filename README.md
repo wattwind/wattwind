@@ -10,7 +10,7 @@ its own web page, with no app, no account and no cloud.
   <img src="docs/img/ui-status.png" alt="The fan's page on a phone: level 2 in Auto, power, cadence and heart rate, and the Auto, Off, 1, 2, 3 buttons" width="300">
 </p>
 
-**Project site: <https://wattwind.github.io/wattwind/>**: what it does, [try the page](https://wattwind.github.io/wattwind/demo.html) (a demo in your browser), [all features](https://wattwind.github.io/wattwind/features.html),
+**Project site: <https://wattwind.github.io/wattwind/>**: what it does, a [live demo](https://wattwind.github.io/wattwind/demo.html) of the phone page, [all features](https://wattwind.github.io/wattwind/features.html),
 the [user manual](https://wattwind.github.io/wattwind/help.html) and the
 [build guide](https://wattwind.github.io/wattwind/build.html).
 

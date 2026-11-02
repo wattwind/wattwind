@@ -39,7 +39,7 @@ def init_json():
 def changes():
     """(fan page text, demo page text): each must occur exactly once in the source."""
     return [
-        ('<title>WattWind</title>', '<title>WattWind: try the page (demo)</title>'),
+        ('<title>WattWind</title>', '<title>WattWind: live demo</title>'),
         ('<link rel="apple-touch-icon" href="/apple-touch-icon.png">\n', ''),
         ('<meta name="apple-mobile-web-app-title" content="WattWind">\n', ''),
         ('<a href="/help" class="help"', '<a href="help.html" class="help"'),
