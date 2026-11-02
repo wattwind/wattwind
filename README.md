@@ -10,7 +10,7 @@ its own web page, with no app, no account and no cloud.
   <img src="docs/img/ui-status.png" alt="The fan's page on a phone: level 2 in Auto, power, cadence and heart rate, and the Auto, Off, 1, 2, 3 buttons" width="300">
 </p>
 
-**Project site: <https://wattwind.github.io/wattwind/>**: what it does, [all features](https://wattwind.github.io/wattwind/features.html),
+**Project site: <https://wattwind.github.io/wattwind/>**: what it does, [try the page](https://wattwind.github.io/wattwind/demo.html) (a demo in your browser), [all features](https://wattwind.github.io/wattwind/features.html),
 the [user manual](https://wattwind.github.io/wattwind/help.html) and the
 [build guide](https://wattwind.github.io/wattwind/build.html).
 
@@ -53,7 +53,7 @@ on this page, or **Check for updates** on the fan.
 | [`firmware/`](firmware/) | The fan's program (MicroPython) and its web page; [how it works](firmware/README.md) and its tests |
 | [`hardware/`](hardware/) | The relay board (KiCad 10) and its [design notes](hardware/DESIGN.md), [parts list](hardware/docs/bom.md) and [prices](hardware/docs/prices.md); the enclosure and cable-entry Fusion scripts |
 | [`micropython/`](micropython/) | The patch and build script for the custom MicroPython file, and the licences of what's inside it |
-| [`docs/`](docs/) | The project site (GitHub Pages) and the user manual |
+| [`docs/`](docs/) | The project site (GitHub Pages), the user manual and the page demo |
 | [`tools/`](tools/) | Release and documentation tools (manifest, signed update file, signing keys, charts, renders) |
 | [`CHANGELOG.md`](CHANGELOG.md) | What changed in each release, and whether builders need to do anything |
 | [`SECURITY.md`](SECURITY.md) | How to report a security problem |

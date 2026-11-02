@@ -12,6 +12,7 @@ DOCS = {"manual": "firmware/www/help.html", "site": "docs/index.html", "build": 
 # feature: phrase that must appear in each of these documents (case-insensitive)
 FEATURES = {
     "decide by": ("Decide by", ["manual", "features", "claude"]),
+    "page demo": ("demo.html", ["site", "features", "claude"]),
     "decide by, site": ("power / heart rate / both", ["site"]),
     "firmware update": ("Firmware update", ["manual", "site", "build", "claude", "features"]),
     "unpair": ("Unpair all", ["manual", "site", "claude", "features"]),
