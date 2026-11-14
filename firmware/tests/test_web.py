@@ -46,6 +46,15 @@ def test_status(env):
     assert res.json["ip"] == "192.168.4.1"
 
 
+def test_status_saved_sensor_signal(env):
+    cfg, _, client = env
+    cfg["hr_addr"] = "aa:bb:cc:dd:ee:01"
+    state.uptime_s = 500
+    state.heard = {"aa:bb:cc:dd:ee:01": (-76, 380)}
+    j = run(client.get("/api/status")).json
+    assert j["hr_rssi"] == [-76, 120] and j["power_rssi"] is None
+
+
 def test_manual_level(env):
     _, _, client = env
     res = post(client, "/api/mode", {"mode": "manual", "level": 3})

@@ -1,5 +1,5 @@
-"""Rider profiles: several people can share the fan, each with their own FTP, heart-rate range, fan response
-and heart-rate strap.
+"""Rider profiles: several people can share the fan, each with their own FTP, heart-rate range, fan response,
+heart-rate strap and CORE sensor (with its heat rule on or off).
 
 cfg["profiles"] is a list of dicts with the keys in FIELDS plus "name"; cfg["profile"] is the index of the
 active one. The active profile's values are mirrored in the normal top-level settings (cfg["ftp"], ...), so
@@ -7,7 +7,9 @@ the rest of the firmware (fan_logic, the Bluetooth sensors) reads them as before
 sync() after a top-level value changes, activate() to switch. Pure Python: host-tested.
 """
 
-FIELDS = ("ftp", "hr_max", "hr_rest", "use", "response", "up_thresholds", "down_thresholds", "hr_addr")
+FIELDS = ("ftp", "hr_max", "hr_rest", "use", "response", "up_thresholds", "down_thresholds", "hr_addr",
+          "core_addr", "heat", "heat_levels")
+PERSONAL = ("hr_addr", "core_addr")          # a sensor worn by one rider: it belongs to one profile only
 MAX = 5
 NAME_MAX = 16
 
@@ -36,18 +38,19 @@ def _copy(v):
 
 
 def sync(cfg):
-    """Copy the top-level values into the active profile (after settings changed). A strap belongs to one
-    rider only: giving it to the active rider takes it away from any other."""
+    """Copy the top-level values into the active profile (after settings changed). A strap (or CORE) belongs to
+    one rider only: giving it to the active rider takes it away from any other."""
     ps = cfg.get("profiles")
     if ps:
         i = cfg.get("profile", 0)
         p = ps[i]
         for f in FIELDS:
             p[f] = _copy(cfg[f])
-        if p["hr_addr"]:
-            for j, q in enumerate(ps):
-                if j != i and q.get("hr_addr") == p["hr_addr"]:
-                    q["hr_addr"] = ""
+        for key in PERSONAL:
+            if p.get(key):
+                for j, q in enumerate(ps):
+                    if j != i and q.get(key) == p[key]:
+                        q[key] = ""
 
 
 def activate(cfg, i):
@@ -58,10 +61,10 @@ def activate(cfg, i):
         cfg[f] = _copy(cfg["profiles"][i][f])
 
 
-def owner_of(cfg, addr):
-    """Index of the profile whose strap has this address, or None."""
+def owner_of(cfg, addr, key="hr_addr"):
+    """Index of the profile whose strap (key="core_addr": CORE) has this address, or None."""
     for i, p in enumerate(cfg.get("profiles") or []):
-        if addr and p.get("hr_addr") == addr:
+        if addr and p.get(key) == addr:
             return i
     return None
 
@@ -85,7 +88,8 @@ def add(cfg, n, defaults):
     p = {"name": n}
     for f in FIELDS:
         p[f] = _copy(defaults[f])
-    p["hr_addr"] = ""
+    for key in PERSONAL:
+        p[key] = ""
     sync(cfg)
     cfg["profiles"].append(p)
     activate(cfg, len(cfg["profiles"]) - 1)

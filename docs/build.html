@@ -223,7 +223,7 @@ footer { padding: 32px 0 56px; color: var(--muted); font-size: 14px; border-top:
   <ol>
     <li>Hold the white <b>BOOTSEL</b> button on the Pico and plug the USB cable into the computer, then let go.
       A drive called <b>RP2350</b> appears.</li>
-    <li>Copy the firmware image <code>RPI_PICO2_W-v1.29.0-wattwind-ble3.uf2</code> (from the <a href="https://github.com/wattwind/wattwind/releases/latest">Releases page</a>)
+    <li>Copy the firmware image <code>RPI_PICO2_W-v1.29.0-wattwind-mp2.uf2</code> (from the <a href="https://github.com/wattwind/wattwind/releases/latest">Releases page</a>)
       onto that drive. The Pico restarts by itself and the drive disappears. That's all: MicroPython is installed.
       (Use this file, not the one from micropython.org: <a href="#micropython">why</a>.)</li>
   </ol>
@@ -466,6 +466,11 @@ footer { padding: 32px 0 56px; color: var(--muted); font-size: 14px; border-top:
   the fan) whether a newer version exists, and links to it. To be told by email instead, choose <b>Watch → Custom →
   Releases</b> on the <a href="https://github.com/wattwind/wattwind">project's GitHub page</a>. If you publish your own firmware, set <code>REPO</code> in
   <code>firmware/www/index.html</code> to your account and repository, so the button checks your releases.</p>
+  <p><b>A new MicroPython file</b> is rare, and the release notes say when one comes out. Release 1.1 has one
+  ("WattWind MicroPython 2"): a fan still on the 1.0 file runs 1.1 too, but only the new file lets a Garmin Edge
+  pair with Share heart rate, and leaves a connection free for an app or watch when a CORE sensor is used as well. To
+  install it, open the box as below and copy the UF2 as in stage 2 (<i>MicroPython on the Pico</i>); the fan's files
+  and settings stay.</p>
   <p><b>With USB</b> (the first install, a new MicroPython, switching to another maker's firmware, or if the page
   can't be reached):</p>
   <ol>
@@ -810,7 +815,7 @@ footer { padding: 32px 0 56px; color: var(--muted); font-size: 14px; border-top:
     <table>
       <thead><tr><th>Method</th><th>Path</th><th>Purpose</th></tr></thead>
       <tbody>
-        <tr><td>GET</td><td><code>/api/status</code></td><td>mode, level, HR, power, cadence, scores, demand, sensor, heart-rate sharing and Wi-Fi state, firmware version and diagnostics</td></tr>
+        <tr><td>GET</td><td><code>/api/status</code></td><td>mode, level, HR, power, cadence, scores, demand, CORE values, sensor, heart-rate sharing and Wi-Fi state, firmware version and diagnostics</td></tr>
         <tr><td>POST</td><td><code>/api/mode</code></td><td><code>{"mode":"auto"}</code> (optional <code>"nudge":-2..2</code>) or <code>{"mode":"manual","level":0-3}</code></td></tr>
         <tr><td>GET / POST</td><td><code>/api/config</code></td><td>read and update settings</td></tr>
         <tr><td>POST</td><td><code>/api/update/start</code>, <code>/file</code>, <code>/finish</code></td><td>firmware update from the page: the signed manifest (Ed25519) and sizes, then the changed files in 4 KB pieces, then check and restart</td></tr>
@@ -827,7 +832,7 @@ footer { padding: 32px 0 56px; color: var(--muted); font-size: 14px; border-top:
         <tr><td>POST</td><td><code>/api/reset</code></td><td>back to the defaults: <code>{"what": "rider"}</code> (selected rider's values) or <code>"fan"</code> (timing settings)</td></tr>
         <tr><td>POST</td><td><code>/api/timer</code></td><td><code>{"minutes": 0-1440}</code>: manual "off in" timer (0 cancels)</td></tr>
         <tr><td>POST</td><td><code>/api/notice/dismiss</code></td><td>clear the one-time message (e.g. after a PIN reset)</td></tr>
-        <tr><td>GET</td><td><code>/api/scan</code></td><td>nearby BLE sensors, for choosing which ones the fan uses</td></tr>
+        <tr><td>GET</td><td><code>/api/scan</code></td><td>nearby BLE sensors (heart rate, power, CORE) with their signal, for choosing which ones the fan uses</td></tr>
         <tr><td>GET / POST</td><td><code>/api/detail</code></td><td>the detailed recording (24 h, for finding a problem): GET downloads it, POST <code>{"action": "start"}</code> / <code>"stop"</code> / <code>"delete"</code> (settings PIN)</td></tr>
         <tr><td>GET</td><td><code>/api/log</code></td><td>the fan's logbook: starts with reason, a status line every 5 minutes while something changes (30 when quiet), and events (Wi-Fi, sensors, buttons, settings, updates, security) (<code>?old=1</code>: previous file; settings PIN in <code>X-Pin</code>)</td></tr>
         <tr><td>GET</td><td><code>/help</code></td><td>the user manual</td></tr>
@@ -890,9 +895,19 @@ sensor:
   strap and the trainer. With the standard UF2 from micropython.org the first sensor connects and the
   second fails (<code>OSError 107</code>).
   <p style="margin:8px 0 0">So the project comes with its own UF2: MicroPython 1.29, unchanged except for
-  that limit, raised to 3 (strap, trainer, and one app or watch for Share heart rate). It is built from the official source by one
+  that limit, raised. It is built from the official source by one
   script in a Docker container, so you can rebuild it or check exactly what changed. If a later
-  MicroPython release lifts the limit, the standard firmware will do.</p></div>
+  MicroPython release lifts the limit, the standard firmware will do.</p>
+  <p style="margin:8px 0 0">Release 1.1 comes with a new UF2, <b>WattWind MicroPython 2</b> (the fan shows which
+  file it runs, at the bottom of Settings). It has room for 6 connections: the Pico's radio itself takes up to 4
+  sensors (strap, trainer, CORE) plus one app or watch for Share heart rate (measured). The 1.0 UF2 had 3.</p>
+  <p style="margin:8px 0 0">The new UF2 can also <b>pair</b>, so a Garmin Edge can use Share heart
+  rate. MicroPython has pairing for this Bluetooth stack, but on the Pico it is switched off and three parts were
+  missing: the fan's Bluetooth description lacked the device type (a Garmin reads the service list, then waits and
+  gives up), nothing answered a pairing request, and paired devices were kept only until a restart. The patch
+  (<code>micropython/btstack-pairing.patch</code>, applied by <code>micropython/build.sh</code>) adds the
+  three, and the firmware keeps the keys in <code>ble_bonds.json</code>. A fan still on the 1.0 UF2 runs 1.1 just
+  the same, without pairing (and with a CORE, without Share heart rate); the page says so under Share heart rate.</p></div>
   <h3>Sensors and data flow</h3>
   <div class="flow">
     <div class="step"><b>Sensors</b><span>Heart-rate strap (BLE 0x180D) and trainer power + cadence (Cycling Power 0x1818, FTMS fallback)</span></div>
@@ -906,11 +921,15 @@ sensor:
   <p>Both sensors are connected at the same time, their addresses are remembered, they reconnect automatically,
   and data counts as stale after 5 s of silence. With <b>Share heart rate</b> on, the fan is also a heart-rate sensor
   itself (<code>ble_share.py</code>, Heart Rate service 0x180D, named WattWind-XXXX HR): one app or watch can connect,
-  and gets every notification of the strap unchanged while the strap is worn.</p>
+  and gets every notification of the strap unchanged while the strap is worn. A <b>CORE</b> body temperature sensor
+  is a third sensor (CORE's Core Body Temperature Service, from its published specification): core and skin
+  temperature, heat strain and quality, once a second; the fan sends it the strap's heart rate when it has none, and
+  reads the temperature from CORE's advertising while it isn't connected. The Pico's radio allows up to 4 sensor
+  connections and one Share heart rate receiver (measured).</p>
   <h3>Software and tools</h3>
   <ul>
     <li><b>Firmware:</b> MicroPython, <code>asyncio</code> with one task per subsystem sharing one state object;
-      <code>aioble</code> for Bluetooth, Microdot for the web server. 400+ pytest tests on the PC, including
+      <code>aioble</code> for Bluetooth, Microdot for the web server. 500+ pytest tests on the PC, including
       whole simulated rides. The real test ride on the main page was also replayed through the Auto code, second by
       second: the fan's 18 level changes matched it within 2 s.</li>
     <li><b>Security:</b> compared item by item with ETSI EN 303 645, the consumer-IoT baseline behind the EU and UK
@@ -918,7 +937,8 @@ sensor:
       at setup, signed updates (Ed25519), encrypted linked-fans messages (AES-128 + HMAC), with the reasons for what is
       left out on purpose (plain HTTP inside your Wi-Fi's encryption, no secure boot, so builders keep control of
       their own fan). A hobby project: no promised support or updates.</li>
-    <li><b>MicroPython:</b> 1.29 with the Bluetooth connection limit raised from 1 to 3, built in Docker.</li>
+    <li><b>MicroPython:</b> 1.29 with the Bluetooth connection limit raised from 1 to 6 and Bluetooth pairing
+      added, built in Docker.</li>
     <li><b>Hardware:</b> KiCad 10 with custom DRC rules for mains clearances and creepage.</li>
     <li><b>Enclosure:</b> Fusion 360 Python script.</li>
     <li>Developed against a Pico-based BLE simulator that advertises heart rate and power, then on the author's

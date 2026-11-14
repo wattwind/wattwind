@@ -93,7 +93,7 @@ input.chg,select.chg{border-color:var(--warn);box-shadow:0 0 0 1px var(--warn)}i
 .newip{margin-top:10px;padding:10px;border:1px solid var(--ok);border-radius:10px;font-size:14px}
 .newip a{font-size:18px;font-weight:700;color:var(--acc)}
 .cur{font-size:14px;margin:4px 0}.cur button{padding:6px 12px;min-height:40px;margin-left:4px}
-.diag{font-size:12px;color:var(--mute);margin-top:14px;line-height:1.6}.cur code{font-size:12px;color:var(--mute)}
+.diag{font-size:12px;color:var(--mute);margin-top:14px;line-height:1.6}.cur code{font-size:12px;color:var(--mute)}.cur small{display:block;font-size:12px;color:var(--mute)}
 </style>
 </head>
 <body>
@@ -115,7 +115,8 @@ input.chg,select.chg{border-color:var(--warn);box-shadow:0 0 0 1px var(--warn)}i
     <div><b id="dem">–</b><span id="deml">demand</span></div>
   </div>
   <div class="rname" id="rname"></div>
-  <div class="dots"><span id="dlab">Sensors:</span><span class="sn" id="snhr"><span class="dot" id="dhr"></span><span id="nhr">HR</span></span><span class="sn" id="snpw"><span class="dot" id="dpw"></span><span id="npw">Power</span></span><span class="sn" id="snld" hidden><span class="dot" id="dld"></span><span id="nld"></span></span></div>
+  <div class="rname" id="coreline" hidden></div>
+  <div class="dots"><span id="dlab">Sensors:</span><span class="sn" id="snhr"><span class="dot" id="dhr"></span><span id="nhr">HR</span></span><span class="sn" id="snpw"><span class="dot" id="dpw"></span><span id="npw">Power</span></span><span class="sn" id="sncore" hidden><span class="dot" id="dcore"></span><span id="ncore">CORE</span></span><span class="sn" id="snld" hidden><span class="dot" id="dld"></span><span id="nld"></span></span></div>
   <div class="warnline" id="warn"></div>
 </section>
 
@@ -162,13 +163,19 @@ input.chg,select.chg{border-color:var(--warn);box-shadow:0 0 0 1px var(--warn)}i
   <summary>Settings</summary>
   <form id="f" onsubmit="saveCfg(event)" novalidate>
   <div class="msg" id="smsg"></div>
-  <details class="grp" open><summary>Rider</summary>
+  <details class="grp"><summary>Rider</summary>
     <div class="riders"><select id="rsel" aria-label="rider" onchange="rider('select',+this.value)"></select>
       <button type="button" onclick="rider('add')">Add</button><button type="button" onclick="rider('rename')">Rename</button><button type="button" id="rdel" onclick="rider('delete')">Delete</button></div>
-    <div class="hint">Saved per rider: FTP, heart rate, Decide by, fan response, the step up / down levels below and the heart-rate strap (Sensors). Everything else is shared. Decide by and Fan response save as soon as you pick; for the rest a bar with Save appears at the bottom.</div>
+    <div class="hint">Saved per rider: FTP, heart rate, Heat from CORE and its levels, Decide by, fan response, the step up / down levels below, the heart-rate strap and the CORE sensor (Sensors). Everything else is shared. Decide by and Fan response save as soon as you pick; for the rest a bar with Save appears at the bottom.</div>
     <label>FTP (W)<input type="number" name="ftp" min="50" max="1000" required></label>
     <label>HR max (bpm)<input type="number" name="hr_max" min="100" max="230" required></label>
     <label>HR rest (bpm)<input type="number" name="hr_rest" min="30" max="120" required></label>
+    <label>Heat from CORE<input type="checkbox" name="heat" onchange="heatSave()"></label>
+    <div class="hint">With a CORE body temperature sensor: from the heat strain below the fan runs at least at level 2 or 3
+    while you ride (CORE's heat zones: 3 = adjust pacing, hydrate and cool; 7 = harmful). It lets go 0.5 lower. The tick
+    box saves at once.</div>
+    <label>Level 2 from heat strain<input type="number" step="0.1" min="1" max="10" name="heat2" required></label>
+    <label>Level 3 from heat strain<input type="number" step="0.1" min="1" max="10" name="heat3" required></label>
     <label>Decide by<select name="use" onchange="autoSave('use')"><option value="both">Power and heart rate</option><option value="power">Power only</option><option value="hr">Heart rate only</option></select></label>
     <label>Fan response<select name="response" onchange="autoSave('response')"><option value="calm">Calm</option><option value="normal">Normal</option><option value="quick">Quick</option></select></label>
     <h3>Auto: step up when demand ≥</h3>
@@ -219,8 +226,9 @@ input.chg,select.chg{border-color:var(--warn);box-shadow:0 0 0 1px var(--warn)}i
   </details>
   </form>
   <details class="grp" id="sensblk"><summary>Sensors</summary>
-  <div class="cur">Heart rate<span id="ahrwho"></span>: <code id="ahr"></code> <button type="button" onclick="pick('hr_addr','')">Forget</button></div>
-  <div class="cur">Power: <code id="apw"></code> <button type="button" onclick="pick('power_addr','')">Forget</button></div>
+  <div class="cur">Heart rate<span id="ahrwho"></span>: <span id="ahrn"></span> <button type="button" onclick="pick('hr_addr','')">Forget</button><small><code id="ahr"></code><span id="ahrs"></span></small></div>
+  <div class="cur">Power: <span id="apwn"></span> <button type="button" onclick="pick('power_addr','')">Forget</button><small><code id="apw"></code><span id="apws"></span></small></div>
+  <div class="cur">CORE<span id="acorewho"></span>: <span id="acoren"></span> <button type="button" onclick="pick('core_addr','')">Forget</button><small><code id="acore"></code><span id="acores"></span></small></div>
   <button type="button" class="save" id="scanb" onclick="scan()">Find sensors</button>
   <div id="devs"></div>
   <div class="msg" id="bmsg"></div>
@@ -230,6 +238,7 @@ input.chg,select.chg{border-color:var(--warn);box-shadow:0 0 0 1px var(--warn)}i
   app or watch connects to the fan instead of the strap. One app or watch at a time. Saved at once.</div>
   <div class="hint" id="sharest"></div>
   <div class="msg" id="shmsg"></div>
+  <div class="hint" id="pairhint"></div>
   </details>
   <details class="grp"><summary>Linked fans</summary>
   <div class="hint" id="lkrole"></div>
@@ -470,6 +479,7 @@ function dtDown(){
 }
 function diag(s){
   var up=s.uptime||0,parts=['Firmware '+(s.version||'?')+(isTest(s.version)?' (test version)':'')+' (for board '+(s.board||'?')+')',
+    'MicroPython '+(s.mp_build>1?'build '+s.mp_build:'build 1 (the older file)'),
     'running '+(up<60?up+' s':dur(up)),'last restart: '+(s.reset_reason||'?')];
   if(s.files)parts.push('files: '+s.files);
   if(s.rssi!=null)parts.push('Wi-Fi '+s.rssi+' dBm ('+(s.rssi>=-60?'good':s.rssi>=-72?'fair':'weak')+')');
@@ -477,6 +487,7 @@ function diag(s){
   if(s.detail&&s.detail.on)parts.push('detailed recording on');
   if(s.hr_battery!=null)parts.push('heart-rate strap battery '+s.hr_battery+' %');
   if(s.power_battery!=null)parts.push('power sensor battery '+s.power_battery+' %');
+  if(s.core_battery!=null)parts.push('CORE battery '+s.core_battery+' %');
   $('diag').textContent=parts.join(' · ');
 }
 
@@ -574,17 +585,41 @@ function show(s){
   $('hr').textContent=txt(s.hr);$('dem').textContent=txt(s.demand,2);
   $('dhr').className='dot'+(s.hr_connected&&!s.hr_off?' on':'');$('dhr').title=s.hr_connected&&!s.hr_off?'connected':'not connected';
   $('deml').textContent='demand'+({power:' · power',hr:' · heart rate',both:' · both'}[s.basis]||'');
+  var hasCore=!!(s.core_connected||s.core_temp!=null);$('sncore').hidden=!hasCore;
+  $('dcore').className='dot'+(s.core_connected?' on':'');$('dcore').title=s.core_connected?'connected':(s.core_source==='beacon'?'temperature from its signal':'not connected');
+  $('ncore').textContent=s.core_name||'CORE';
+  var zone=s.core_hsi==null?0:s.core_hsi>=7?4:s.core_hsi>=3?3:s.core_hsi>=1?2:1;
+  $('coreline').hidden=s.core_temp==null;
+  $('coreline').textContent=s.core_temp==null?'':'Core '+s.core_temp.toFixed(1)+' °C'+(s.core_skin!=null?' · skin '+s.core_skin.toFixed(1)+' °C':'')+
+    (s.core_hsi!=null?' · heat strain '+s.core_hsi.toFixed(1)+' (zone '+zone+')':
+    (s.core_source==='beacon'?' (from its signal; heat strain needs the connection)':''))+
+    (s.heat_floor>0&&s.mode==='auto'?' → fan at least level '+s.heat_floor:'')+
+    (s.core_quality!=null&&s.core_quality<3?' · quality '+['invalid','poor','fair'][s.core_quality]+' (CORE still settling)':'');
+  $('coreline').style.color=zone===4?'#d33':zone===3?'#e08a00':'';
   $('dpw').className='dot'+(s.power_connected?' on':'');$('dpw').title=s.power_connected?'connected':'not connected';
   $('rname').textContent=s.rider?'Rider: '+s.rider:'';
+  [['hr','ahr'],['power','apw'],['core','acore']].forEach(function(p){
+    var on=s[p[0]+'_connected'],n=on?s[p[0]+'_name']||'':'',a=$(p[1]).textContent,r=s[p[0]+'_rssi'];
+    $(p[1]+'n').textContent=n&&n!==a?n:'';
+    $(p[1]+'s').textContent=(on?' · connected':a.indexOf(':')>0?' · not connected':'')+(r?' · '+r[0]+' dBm'+(r[0]<-90?' (weak)':'')+
+      (r[1]>=60?' ('+(r[1]<3600?Math.round(r[1]/60)+' min':Math.round(r[1]/3600)+' h')+' ago)':''):'');
+  });
   $('nhr').textContent=(s.hr_name||'HR')+(s.hr_off?' (not worn)':'')+(s.hr_share==='connected'?' · shared':'');
-  $('sharest').textContent=s.hr_share==='connected'?'Sharing: an app or watch is connected to '+s.hr_share_name+'.':
+  $('pairhint').textContent=s.hr_share_pair==='on'?'Pairing: an app or watch that asks to pair (Garmin Edge) pairs once, without a code, and reconnects by itself after the fan restarts.'+(s.hr_share_bonds?' Paired: '+s.hr_share_bonds+'.':''):
+    s.hr_share_pair==='unsupported'?'Apps and watches that insist on pairing (Garmin Edge) need the pairing MicroPython on the fan, installed once over USB (see the build guide).':'';
+  var nr=s.hr_share_receivers||0,lim=s.hr_share_limit==null?1:s.hr_share_limit;
+  $('sharest').textContent=lim<1&&!nr?'The older MicroPython allows 3 Bluetooth connections, and the sensors use all 3, so no app or watch can connect. The new MicroPython takes up to 4 sensors plus 1 app or watch (build guide).':
+    s.hr_share==='connected'?'Sharing: '+(nr>1?nr+' apps or watches are':'an app or watch is')+' connected to '+s.hr_share_name+(s.hr_share_secure==='paired'?' (paired, encrypted)':'')+
+      (nr<lim?'. '+(lim-nr)+' more can connect.':'. No more can connect now.'):
     s.hr_share==='waiting'?'Waiting: in your app or watch, add a heart-rate sensor and choose '+s.hr_share_name+'.':'';$('npw').textContent=s.power_name||'Power';
   var fs=!!(s.follow&&s.follow.mode==='same');$('dlab').textContent=fs?'Leader:':'Sensors:';
-  $('snhr').hidden=$('snpw').hidden=fs;$('snld').hidden=!fs;
+  $('snhr').hidden=$('snpw').hidden=fs;$('snld').hidden=!fs;if(fs)$('sncore').hidden=true;
   if(fs){$('dld').className='dot'+(s.follow.fresh?' on':'');$('nld').textContent=s.follow.name}
   var w=[];
   if(s.hr_battery!=null&&s.hr_battery<=15)w.push('Heart-rate strap battery '+s.hr_battery+' %: replace soon.');
   if(s.power_battery!=null&&s.power_battery<=15)w.push('Power sensor battery '+s.power_battery+' %: replace soon.');
+  if(s.core_battery!=null&&s.core_battery<=15)w.push('CORE battery '+s.core_battery+' %: charge it soon.');
+  if(s.core_hsi!=null&&s.core_hsi>=7)w.push('Heat strain '+s.core_hsi.toFixed(1)+' (CORE heat zone 4): ease off, cool down and drink.');
   if(s.box_temp!=null&&s.box_temp>=70)w.push('The controller is running hot (chip '+s.box_temp+' °C): give the box air, keep it out of the sun.');
   if(s.files&&s.files!=='ok'&&s.files.indexOf('not checked')<0)w.push('Firmware files differ from their list ('+s.files+'): copy the firmware again.');
   if(s.safe_start)w.push('Safe start: the fan started with default ride settings after repeated errors. Install the latest firmware (Settings → Maintenance) or Restart.');
@@ -694,8 +729,11 @@ function loadCfg(){
     ['ftp','hr_max','hr_rest','dwell_up_s','dwell_down_s','manual_timeout_min','idle_off_min','max_level','hostname','response','use']
       .forEach(function(k){F[k].value=c[k]});
     for(var i=0;i<3;i++){F['up'+i].value=c.up_thresholds[i];F['dn'+i].value=c.down_thresholds[i]}
+    var hl=c.heat_levels||[3,7];F.heat2.value=hl[0];F.heat3.value=hl[1];
     W.ssid.value=c.wifi_ssid;
     $('ahr').textContent=c.hr_addr||'first one found';$('apw').textContent=c.power_addr||'first one found';
+    $('acore').textContent=c.core_addr||'first one found';F.heat.checked=c.heat!==false;
+    $('acorewho').textContent=(c.profiles&&c.profiles.length>1)?' ('+c.profiles[c.profile].name+')':'';
     $('hrshare').checked=!!c.hr_share;
     pinSet=c.pin_set;host=c.hostname;$('apdef').hidden=!c.ap_default;$('nopin').hidden=c.pin_set;
     $('ahrwho').textContent=(c.profiles&&c.profiles.length>1)?' ('+c.profiles[c.profile].name+')':'';
@@ -709,7 +747,7 @@ function loadCfg(){
 // bar at the bottom offers Save / Undo. Anything that reloads the form asks first (keepEdits), and so does leaving
 // the page. Decide by and Fan response save at once: a choice from a list is always a whole, valid value; numbers
 // wait for Save (half-typed values, the step levels checked as a pair, the PIN).
-var TRACK=['ftp','hr_max','hr_rest','up0','up1','up2','dn0','dn1','dn2','dwell_up_s','dwell_down_s','manual_timeout_min',
+var TRACK=['ftp','hr_max','hr_rest','heat2','heat3','up0','up1','up2','dn0','dn1','dn2','dwell_up_s','dwell_down_s','manual_timeout_min',
   'idle_off_min','max_level','hostname','pin_for_control','ap_password','ap_password2','new_pin','new_pin2'],
   saved=null,curProfile=0,savedSel={};
 function fval(k){var e=F[k];return e.type==='checkbox'?e.checked:e.value}
@@ -746,6 +784,7 @@ function fieldOf(t){
   var m=/^Level (\d): step down/.exec(t);if(m)return 'dn'+(m[1]-1);
   m=/^Step (up|down): level (\d)/.exec(t);if(m)return (m[1]==='up'?'up':'dn')+(m[2]-1);
   m=/^Step (up|down): each/.exec(t);if(m)return m[1]==='up'?'up0':'dn0';
+  if(/^Heat strain/.test(t))return 'heat2';
   for(var i=0;i<FIELDS.length;i++)if(FIELDS[i][0].test(t))return FIELDS[i][1];
   return null}
 function openTo(e){for(var d=e.closest('details');d;d=d.parentElement&&d.parentElement.closest('details'))d.open=true}
@@ -753,6 +792,12 @@ function markBad(k){
   if(!k||!F[k])return;var e=F[k];
   openTo(e);e.classList.add('bad');e.scrollIntoView({block:'center'});e.focus({preventScroll:true})}
 F.addEventListener('input',function(ev){if(ev.target.classList)ev.target.classList.remove('bad')});
+// The fan answers with setting names; the "Saved: ..." message uses the words on the page.
+var SAVED={ftp:'FTP',hr_max:'HR max',hr_rest:'HR rest',heat_levels:'heat strain levels',up_thresholds:'step up levels',
+  down_thresholds:'step down levels',dwell_up_s:'time before step up',dwell_down_s:'time before step down',
+  manual_timeout_min:'manual → auto time',idle_off_min:'off after no pedaling',max_level:'highest level',
+  hostname:'name',ap_password:'access point password',settings_pin:'PIN',pin_for_control:'fan buttons need the PIN',
+  use:'Decide by',response:'Fan response'};
 function saveCfg(ev,done,fail){
   if(ev)ev.preventDefault();
   function err(t,k){t=nice(t);msg('smsg',t);if(!$('unsaved').hidden)$('unsmsg').textContent=t;markBad(k||fieldOf(t));if(fail)fail()}
@@ -764,6 +809,7 @@ function saveCfg(ev,done,fail){
     .forEach(function(k){d[k]=num(F[k].value)});
   d.up_thresholds=[0,1,2].map(function(i){return num(F['up'+i].value)});
   d.down_thresholds=[0,1,2].map(function(i){return num(F['dn'+i].value)});
+  d.heat_levels=[num(F.heat2.value),num(F.heat3.value)];
   d.hostname=F.hostname.value.trim().toLowerCase();
   d.response=F.response.value;d.use=F.use.value;
   d.pin_for_control=F.pin_for_control.checked;
@@ -773,7 +819,7 @@ function saveCfg(ev,done,fail){
   if(F.new_pin.value)d.settings_pin=F.new_pin.value;
   if(getPin())d.pin=getPin();
   api('/api/config',d).then(function(c){
-    msg('smsg',c.changed.length?'Saved: '+c.changed.join(', ')+'.':'No changes.',true);
+    msg('smsg',c.changed.length?'Saved: '+c.changed.map(function(k){return SAVED[k]||k}).join(', ')+'.':'No changes.',true);
     if(d.settings_pin)localStorage.setItem('fanpin',d.settings_pin);
     F.ap_password.value=F.ap_password2.value=F.new_pin.value=F.new_pin2.value='';
     if(c.changed.indexOf('hostname')>=0||c.changed.indexOf('ap_password')>=0)
@@ -830,7 +876,7 @@ function reboot(){
 }
 
 function eraseAll(){
-  if(!confirm('Erase everything? Settings, riders, sensors, Wi-Fi, PIN and logbook are deleted, and the fan restarts as new. This cannot be undone (a settings backup can bring the settings back).'))return;
+  if(!confirm('Erase everything? Settings, riders, sensors, Wi-Fi, PIN, paired watches and logbook are deleted, and the fan restarts as new. This cannot be undone (a settings backup can bring the settings back).'))return;
   var d={confirm:'erase'};if(getPin())d.pin=getPin();
   api('/api/erase',d).then(function(){
     msg('emsg','Erasing and restarting. The fan comes back with its own access point (WattWind-…, password wattwind).',true);
@@ -891,14 +937,15 @@ $('set').addEventListener('toggle',function(){if(!$('set').open){$('wlist').inne
 function scan(){
   var b=$('scanb');b.disabled=true;b.textContent='Searching (about 5 s)…';$('devs').innerHTML='';
   api('/api/scan').then(function(r){
-    if(!r.devices.length){msg('bmsg','No heart rate or power sensors found. Is the sensor awake?');return}
+    if(!r.devices.length){msg('bmsg','No heart rate, power or CORE sensors found. Is the sensor awake?');return}
     $('bmsg').textContent='';
     $('devs').innerHTML=r.devices.map(function(d){
-      var t=d.types.map(function(x){return x==='hr'?'HR':'power'}).join(' + ');
+      var nm=function(x){return x==='hr'?'HR':x==='core'?'CORE':'power'};
+      var t=d.types.map(nm).join(' + ');
       var btn=d.types.map(function(x){
-        return '<button type="button" data-key="'+x+'_addr" data-addr="'+d.addr+'">Use for '+(x==='hr'?'HR':'power')+'</button>'}).join('');
+        return '<button type="button" data-key="'+x+'_addr" data-addr="'+d.addr+'">'+(x==='core'?'Use as CORE':'Use for '+nm(x))+'</button>'}).join('');
       return '<div class="dev"><div>'+esc(d.name||'(no name)')+'<small>'+d.addr+' · '+t+
-        (d.connected?' · connected':(d.rssi!==null?' · '+d.rssi+' dBm':''))+'</small></div><div>'+btn+'</div></div>';
+        (d.connected?' · connected':'')+(d.rssi!==null?' · '+d.rssi+' dBm'+(d.rssi<-90?' (weak)':''):'')+'</small></div><div>'+btn+'</div></div>';
     }).join('');
   }).catch(function(e){msg('bmsg',e.message)}).then(function(){b.disabled=false;b.textContent='Find sensors'});
 }
@@ -906,6 +953,12 @@ function scan(){
 $('devs').addEventListener('click',function(ev){
   var b=ev.target;if(b.dataset&&b.dataset.key)pick(b.dataset.key,b.dataset.addr);
 });
+
+function heatSave(){
+  var on=F.heat.checked,d={heat:on};if(getPin())d.pin=getPin();
+  api('/api/config',d).then(function(){msg('smsg',on?'Saved: heat from CORE on.':'Saved: heat from CORE off.',true)})
+    .catch(function(e){F.heat.checked=!on;msg('smsg','Heat from CORE not saved: '+e.message)});
+}
 
 function shareSave(){
   var on=$('hrshare').checked,d={hr_share:on};if(getPin())d.pin=getPin();
@@ -916,7 +969,7 @@ function shareSave(){
 
 function pick(key,addr){
   if(markDirty())return keepEdits(function(){pick(key,addr)});
-  if(!addr&&!confirm('Forget this '+(key==='hr_addr'?'heart-rate strap':'power sensor')+'? The next one found is used, which could be a neighbour\'s.'))return;
+  if(!addr&&!confirm('Forget this '+(key==='hr_addr'?'heart-rate strap':key==='core_addr'?'CORE sensor':'power sensor')+'? The next one found is used, which could be a neighbour\'s.'))return;
   var d={};d[key]=addr;if(getPin())d.pin=getPin();
   api('/api/config',d).then(function(){
     msg('bmsg',addr?'Saved. The fan connects to it within a few seconds.':'Forgotten: the first sensor found will be used.',true);

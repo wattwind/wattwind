@@ -134,3 +134,65 @@ def test_zero_bpm_is_not_a_reading():
     assert c.update(0, None, 1, 0) == "zero"
     assert c.update(1000, None, 1, 0) == "zero"
     assert c.update(2000, None, 1, 72) is None             # a real reading again
+
+
+# ---------------------------------------------------------------- CORE (spec V2.2, notes V3.3)
+import struct as _struct
+from ble_parse import parse_core, parse_core_beacon
+
+
+def _core(flags, core, skin=0, res=0, qs=0, hr=0, hsi=0xFF):
+    return _struct.pack("<BhhhBBB", flags, core, skin, res, qs, hr, hsi)
+
+
+def test_core_makers_example():
+    # Implementation notes V3.3 table 5: 0x37, 0x0F19, 0x0D5C, 0x002F, 0x11, 0x00, 0x27
+    d = parse_core(bytes([0x37, 0x19, 0x0F, 0x5C, 0x0D, 0x2F, 0x00, 0x11, 0x00, 0x27]))
+    assert d["core"] == 38.65 and d["skin"] == 34.2
+    assert d["quality"] == 1 and d["hr_state"] == "none"     # poor; HR supported, not receiving
+    assert d["hr"] is None and d["hsi"] == 3.9               # flag 0x10 set but HR 0: none
+
+
+def test_core_no_data_yet():
+    d = parse_core(_core(0x24, 0x7FFF, qs=0x13, hsi=50))
+    assert d["core"] is None and d["hsi"] is None            # HSI invalid while the core temperature is
+
+
+def test_core_invalid_quality_means_no_value():
+    d = parse_core(_core(0x24, 3800, qs=0x10, hsi=40))
+    assert d["core"] is None and d["hsi"] is None and d["quality"] == 0
+
+
+def test_core_flags_decide_what_is_valid():
+    d = parse_core(_core(0x00, 3712, skin=3400, qs=0x23, hr=150, hsi=20))
+    assert d["core"] == 37.12 and d["skin"] is None and d["quality"] is None and d["hr"] is None and d["hsi"] is None
+
+
+def test_core_heart_rate_and_state():
+    d = parse_core(_core(0x34, 3750, qs=0x23, hr=142, hsi=25))
+    assert d["hr"] == 142 and d["hr_state"] == "receiving" and d["quality"] == 3 and d["hsi"] == 2.5
+
+
+def test_core_fahrenheit_converted():
+    d = parse_core(_core(0x0D, 10000, skin=9500, qs=0x34))   # 100.00 F, 95.00 F
+    assert d["core"] == 37.78 and d["skin"] == 35.0
+
+
+def test_core_short_packets():
+    assert parse_core(b"\x00\x19") is None
+    assert parse_core(bytes([0x00, 0x19, 0x0F]))["core"] == 38.65  # only the mandatory field
+    d = parse_core(bytes([0x37, 0x19, 0x0F, 0x5C, 0x0D]))          # cut after skin
+    assert d["skin"] == 34.2 and d["hsi"] is None
+
+
+def test_core_quality_not_available():
+    d = parse_core(_core(0x04, 3700, qs=0x37))
+    assert d["quality"] is None and d["hr_state"] is None and d["core"] == 37.0
+
+
+def test_core_beacon():
+    # Notes V3.3 table 2: manufacturer data 0x0B-F6-00-04-B3-91 -> after the company id: 00 04 B3 91 = 37.299 degC
+    assert parse_core_beacon(bytes([0x00, 0x04, 0xB3, 0x91])) == 37.299
+    assert parse_core_beacon(bytes([0x00, 0x03, 0xB3, 0x91])) is None   # not measuring
+    assert parse_core_beacon(bytes([0x00, 0x04, 0x00, 0x00])) is None   # nonsense value
+    assert parse_core_beacon(b"\x00\x04") is None

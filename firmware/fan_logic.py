@@ -11,7 +11,11 @@ Time is a parameter, so tests can simulate whole rides in milliseconds.
     demand   = max of the scores that are available
 
 Levels step one at a time with hysteresis (up_thresholds / down_thresholds) after
-dwell_up_s / dwell_down_s at the current level. Special cases, in priority order:
+dwell_up_s / dwell_down_s at the current level.
+Heat (release 1.1, CORE sensor, per-rider settings "heat", on by default, and "heat_levels"): CORE's Heat Strain
+Index keeps the level at least 2 from heat_levels[0] (default 3.0, CORE heat zone 3: "adjust pacing, hydrate and
+cool") and at least 3 from heat_levels[1] (default 7.0, zone 4); it lets go 0.5 below each. Only while riding, with the same dwell times; max_level still caps it. Special cases, in
+priority order:
     idle      not pedaling, or no sensor data at all, for idle_off_min: off
     lost      no power and no HR: hold 120 s, then one level down per 60 s
     stopped   cadence 0 or power < 20 W for 5 s: hold (normal: 60 s), then one level down per 60 s
@@ -34,6 +38,8 @@ STOP_DETECT_S = 5
 LOST_HOLD_S = 120
 FORCED_STEP_S = 60
 NUDGE_MAX = 2                # Auto nudge: levels added to what auto computes, -2 .. +2
+HEAT_LEVELS = (3.0, 7.0)     # default "heat_levels": Heat Strain Index (CORE) for at least level 2, level 3
+HEAT_LET_GO = 0.5            # ... let go this much below (hysteresis: the index moves in 0.1 steps)
 
 
 def _ema(value, target, dt, tau):
@@ -60,9 +66,12 @@ class FanLogic:
         self.nudge = 0               # -NUDGE_MAX..NUDGE_MAX levels: today's "a bit more / less" in auto
         self.target = 0              # the level to switch to: self.level (computed) + nudge
         self.why = ""                # why the computed level last changed (for the logbook)
+        self.heat_floor = 0          # the level CORE's Heat Strain Index keeps at least (0: none)
+        self.heat = False            # the heat floor holds the level now (shown on the page)
 
-    def update(self, now_s, power, cadence, hr):
-        """One step, about once per second. None = value missing. Returns the target level."""
+    def update(self, now_s, power, cadence, hr, hsi=None):
+        """One step, about once per second. None = value missing (hsi: CORE's Heat Strain Index). Returns the
+        target level."""
         cfg = self.cfg
         tau_up, tau_down, stop_hold_s = RESPONSES.get(cfg.get("response"), RESPONSES["normal"])
         dt = 0 if self._last_t is None else max(0, now_s - self._last_t)
@@ -94,6 +103,8 @@ class FanLogic:
         self.demand = max(scores) if scores else None
         self.basis = ("both" if ps is not None and hs is not None else "power" if ps is not None
                       else "hr" if hs is not None else None)          # shown on the page next to demand
+
+        self.heat_floor = self._heat_floor(hsi, cfg.get("heat_levels", HEAT_LEVELS)) if cfg.get("heat", True) else 0
 
         # Conditions
         stopped = (cadence is not None and cadence == 0) or (power is not None and power < STOP_POWER_W)
@@ -128,7 +139,18 @@ class FanLogic:
         if self.level == 0 and self.nudge > 0 and (stopped or lost):
             t = 0
         self.target = max(0, min(cfg.get("max_level", 3), t))   # auto never goes above max_level
+        self.heat = bool(self.heat_floor and 0 < self.level <= self.heat_floor)
         return self.target
+
+    def _heat_floor(self, hsi, on):
+        if hsi is None:
+            return 0
+        f = self.heat_floor
+        if hsi >= on[1] or (f == 3 and hsi >= on[1] - HEAT_LET_GO):
+            return 3
+        if hsi >= on[0] or (f >= 2 and hsi >= on[0] - HEAT_LET_GO):
+            return 2
+        return 0
 
     def adopt(self, level, now_s, restart_idle=True):
         """Continue from the level the fan is at (switching from manual back to auto), instead of
@@ -153,16 +175,21 @@ class FanLogic:
             self._forced_next = now_s + FORCED_STEP_S
 
     def _hysteresis(self, now_s, stopped):
-        if self.demand is None:
+        if self.demand is None and not self.heat_floor:
             return
         cfg = self.cfg
         at_level = now_s - self._level_since
         lv = self.level
-        if lv < cfg.get("max_level", 3) and not stopped and self.demand >= cfg["up_thresholds"][lv] \
+        demand_up = self.demand is not None and self.demand >= cfg["up_thresholds"][lv] if lv < 3 else False
+        heat_up = lv < self.heat_floor
+        if lv < cfg.get("max_level", 3) and not stopped and (demand_up or heat_up) \
                 and at_level >= cfg["dwell_up_s"]:
-            self._set(lv + 1, now_s, "demand {:.2f} >= {} ({})".format(self.demand, cfg["up_thresholds"][lv], self.basis))
-        elif lv > 0 and self.demand < cfg["down_thresholds"][lv - 1] \
-                and at_level >= cfg["dwell_down_s"]:
+            if demand_up:
+                self._set(lv + 1, now_s, "demand {:.2f} >= {} ({})".format(self.demand, cfg["up_thresholds"][lv], self.basis))
+            else:
+                self._set(lv + 1, now_s, "heat strain from CORE: at least level {}".format(self.heat_floor))
+        elif lv > 0 and lv - 1 >= self.heat_floor and self.demand is not None \
+                and self.demand < cfg["down_thresholds"][lv - 1] and at_level >= cfg["dwell_down_s"]:
             self._set(lv - 1, now_s, "demand {:.2f} < {} ({})".format(self.demand, cfg["down_thresholds"][lv - 1], self.basis))
 
     def _set(self, level, now_s, why=""):

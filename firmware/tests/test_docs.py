@@ -50,10 +50,21 @@ FEATURES = {
     "check for updates": ("Check for updates", ["manual", "site", "build", "features", "claude"]),
     "release emails": ("Watch → Custom", ["manual", "build"]),
     "share heart rate": ("Share heart rate", ["manual", "site", "build", "claude", "features"]),
+    "share pairing": ("Garmin Edge", ["manual", "site", "build", "claude", "features"]),
+    "core sensor": ("CORE", ["manual", "site", "build", "claude", "features"]),
+    "heat from core": ("Heat from CORE", ["manual", "claude", "features"]),
+    "heat levels": ("Level 2 from heat strain", ["manual"]),
+    "heat levels, notes": ("heat_levels", ["claude"]),
 }
 
 # phrases of old behaviour, anywhere in the docs or in the site's SVG images
 STALE = [
+    "raised to 3 (strap",                   # 1.1: the new MicroPython file has room for 6 (radio: 4 sensors + 1 receiver)
+    "limit raised from 1 to 3",
+    "wattwind-ble3.uf2</code> (from",       # 1.1: the build guide names the new file (mp2)
+    "a limit of its Bluetooth software",    # 1.1: the fan pairs (pairing UF2)
+    "one that connects without pairing; Garmin",  # 1.1 site: a Garmin Edge pairs
+    "Allow pairing",                        # 1.1: no pairing setting (user 2026-11-03)
     "Only official firmware",               # 1.0.0 site: Wi-Fi updates are signed; USB stays open, so "only official" overclaimed
     "Network name and PIN",                 # 0.9.81: the groups are "Wi-Fi and address" and "PIN"
     "Settings → Wi-Fi network",

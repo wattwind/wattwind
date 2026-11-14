@@ -19,7 +19,7 @@ NUMBERS = {
 THRESHOLDS = ("up_thresholds", "down_thresholds")
 
 HOSTNAME_CHARS = "abcdefghijklmnopqrstuvwxyz0123456789-"
-SENSOR_ADDRS = ("hr_addr", "power_addr")
+SENSOR_ADDRS = ("hr_addr", "power_addr", "core_addr")
 
 RESPONSES = ("calm", "normal", "quick")      # keys of fan_logic.RESPONSES
 USES = ("both", "power", "hr")               # fan_logic.USES: what decides in Auto
@@ -35,7 +35,7 @@ def is_ble_addr(value):
 
 BACKUP_KEYS = tuple(k for k in config.DEFAULTS) + ("profiles", "profile")
 CHECKED = tuple(NUMBERS) + THRESHOLDS + ("response", "use", "hostname", "ap_password", "pin_for_control",
-                                         "settings_pin", "hr_share") + SENSOR_ADDRS
+                                         "settings_pin", "hr_share", "heat", "heat_levels") + SENSOR_ADDRS
 
 def restore_settings(cfg, b):
     """Values from a backup -> the ones to apply. Unknown keys are ignored; a bad value raises ValueError."""
@@ -116,6 +116,14 @@ def _check_one(key, value):
     elif key == "hr_share":
         if not isinstance(value, bool):
             raise ValueError("Share heart rate: true or false")
+    elif key == "heat":
+        if not isinstance(value, bool):
+            raise ValueError("Heat from CORE: true or false")
+    elif key == "heat_levels":
+        if (not isinstance(value, list) or len(value) != 2
+                or not all(_is_number(x) and 1 <= x <= 10 for x in value)):
+            raise ValueError("Heat strain: each value a number from 1 to 10")
+        value = [float(x) for x in value]
     elif key == "settings_pin":
         if not isinstance(value, str) or len(value) > 16:
             raise ValueError("Settings PIN: up to 16 characters")
@@ -132,6 +140,9 @@ def _check_together(cfg, new):
         raise ValueError("HR rest must be below HR max")
     if merged.get("pin_for_control") and not merged["settings_pin"]:
         raise ValueError("Fan buttons need the PIN: set a settings PIN first")
+    h = merged.get("heat_levels")
+    if h and not h[0] < h[1]:
+        raise ValueError("Heat strain: level 2 ({}) must be below level 3 ({})".format(h[0], h[1]))
     up, down = merged["up_thresholds"], merged["down_thresholds"]
     for i in range(3):          # the most specific message first: one level, with its values
         if not down[i] < up[i]:
@@ -218,6 +229,12 @@ def _fix_pairs(target, d, reset, where, prefix):
             reset(where, "hr_rest", prefix + "hr_rest")
             reset(where, "hr_max", prefix + "hr_max")
     except (KeyError, TypeError):
+        pass
+    try:
+        h = target["heat_levels"]
+        if not h[0] < h[1]:
+            reset(where, "heat_levels", prefix + "heat_levels")
+    except (KeyError, TypeError, IndexError):
         pass
     try:
         up, down = target["up_thresholds"], target["down_thresholds"]

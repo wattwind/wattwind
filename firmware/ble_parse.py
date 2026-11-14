@@ -194,3 +194,69 @@ class CrankCadence:
             self.cadence = 0
             self.revs = None    # stopped: start a fresh baseline (the 16-bit event time wraps after 64 s)
         return self.cadence
+
+
+# ---------------------------------------------------------------- CORE body temperature sensor (release 1.1)
+# CoreTemp BLE Service Specification V2.2 and CORE Connectivity Implementation Notes V3.3 (github.com/CoreBodyTemp/CoreBodyTemp).
+# Written from the spec (not from any library); tests use the maker's example bytes (tests/test_ble_parse.py).
+
+CORE_NO_DATA = 0x7FFF
+CORE_QUALITY = ("invalid", "poor", "fair", "good", "excellent")
+
+
+def parse_core(data):
+    """Core Body Temperature characteristic -> dict, or None if too short.
+
+    core, skin: degC (None if missing / not valid / no data yet; Fahrenheit converted);
+    quality: 0-4 (invalid ... excellent) or None; hr_state: "none" (CORE gets no heart rate), "receiving",
+    "unsupported" or None; hr: bpm CORE receives (None when 0 / not valid); hsi: Heat Strain Index 0-25.4 or None.
+    The fields are read by the flags AND the length (the spec says "if present" but also sends all of them).
+    """
+    if len(data) < 3:
+        return None
+    flags = data[0]
+    fahrenheit = bool(flags & 0x08)
+
+    def temp(raw):
+        if raw == CORE_NO_DATA:
+            return None
+        t = raw / 100
+        return round((t - 32) * 5 / 9, 2) if fahrenheit else t
+
+    out = {"core": temp(_s16(data, 1)), "skin": None, "quality": None, "hr_state": None, "hr": None, "hsi": None}
+    i = 3
+    if len(data) >= i + 2:                      # skin temperature
+        if flags & 0x01:
+            out["skin"] = temp(_s16(data, i))
+        i += 2
+    if len(data) >= i + 2:                      # core reserved (unused)
+        i += 2
+    if len(data) >= i + 1:                      # quality and state
+        if flags & 0x04:
+            q = data[i] & 0x07
+            out["quality"] = q if q <= 4 else None          # 7 = not available
+            st = (data[i] >> 4) & 0x03
+            out["hr_state"] = {0: "unsupported", 1: "none", 2: "receiving"}.get(st)   # 3 = not available
+        i += 1
+    if len(data) >= i + 1:                      # heart rate CORE receives
+        if flags & 0x10 and data[i]:
+            out["hr"] = data[i]
+        i += 1
+    if len(data) >= i + 1:                      # Heat Strain Index, 0.1 units, 0xFF invalid
+        if flags & 0x20 and data[i] != 0xFF and out["core"] is not None:
+            out["hsi"] = data[i] / 10
+    if out["quality"] == 0:                     # "invalid": don't use the temperature
+        out["core"] = None
+        out["hsi"] = None
+    return out
+
+
+def parse_core_beacon(payload):
+    """CORE's advertising manufacturer data AFTER the 2-byte company id (0x0BF6; notes: 0xF60B): version, status, UINT16 core temp
+    in 0.001 degC. Returns degC, or None (too short, zero, not measuring: status bits 0-3 must be 4)."""
+    if len(payload) < 4:
+        return None
+    if payload[1] & 0x0F != 4:
+        return None
+    milli = _u16(payload, 2)
+    return milli / 1000 if 20000 <= milli <= 45000 else None

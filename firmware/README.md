@@ -38,9 +38,10 @@ Python and is tested on a PC with pytest.
 | `main.py` | boot sequence, update mode, applying a staged update, the quick-plug-in PIN reset, task supervision, watchdog, status log |
 | `relay.py` | the relay pins; the **only** code that switches them (`set_level()`) |
 | `fan_logic.py` | Auto: power / heart-rate scores, smoothing, thresholds, dwell times, stop and sensor-loss handling, nudge. Pure Python |
-| `ble_sensors.py` | Bluetooth central: scans, connects heart rate + power at the same time, reconnects, picks the rider by strap |
+| `ble_sensors.py` | Bluetooth central: scans, connects heart rate + power + CORE at the same time, reconnects, picks the rider by strap; CORE: heart rate input, beacon |
 | `ble_share.py` | Share heart rate (setting `hr_share`, off by default): the fan as a Bluetooth heart-rate sensor for one app or watch, passing on the strap's notifications |
-| `ble_parse.py` | parsing of Heart Rate (0x2A37), Cycling Power (0x2A63) and FTMS Indoor Bike Data (0x2AD2) notifications; cadence from crank revolutions |
+| `ble_bonds.py` | Pairing keys for Share heart rate (release 1.1, pairing UF2 only): BTstack's key store kept in `ble_bonds.json`, so a paired Garmin Edge reconnects after a restart |
+| `ble_parse.py` | parsing of Heart Rate (0x2A37), Cycling Power (0x2A63), FTMS Indoor Bike Data (0x2AD2) and CORE (Core Body Temperature, its advertising beacon) notifications; cadence from crank revolutions |
 | `wifi.py` | home network, own access point as fallback, retries, mDNS hostname |
 | `dns.py` | captive-portal DNS on the access point (every name resolves to the fan) |
 | `web.py` | Microdot routes and JSON API (the setting rules are in `checks.py`); `FanApp` closes a connection that doesn't send its request within 10 s (or take its answer within 2 min), so stalled clients can't use up the Pico's few sockets |
@@ -87,7 +88,8 @@ simulate whole rides in milliseconds.
 ## Bluetooth (`ble_sensors.py`)
 
 aioble as a central. The fan needs **two connections at once** (strap and trainer), but MicroPython 1.29 compiles
-BTstack with room for one; the project's own UF2 (`../micropython/`) raises it to 3 and changes nothing else.
+BTstack with room for one; the project's own UF2 (`../micropython/`, "WattWind MicroPython 2" since 1.1) raises it
+to 6 and adds pairing (the 1.0 UF2: 3, no pairing). The radio takes at most 4 outgoing (sensor) connections.
 Sensors are remembered by address, notifications older than 5 s count as missing, and reconnects back off
 5 → 15 s. A heart-rate strap taken off may keep sending its last value for minutes (seen in the ride test), so
 `ble_parse.HrContact` judges "worn" from what the sensor reports: the Heart Rate Measurement's sensor-contact bits
@@ -95,18 +97,42 @@ Sensors are remembered by address, notifications older than 5 s count as missing
 and sends none for 5 s = not worn; worn again after RR intervals in 3 messages in a row, so a stray one doesn't count), else nothing (the 5 s rule and the disconnect). `fan_logic.basis` says which score decided
 (power / hr / both), shown on the page next to demand. While a firmware update is coming in, the search pauses so Wi-Fi has the radio.
 
+**CORE (release 1.1)**: role `core`, CORE's Core Body Temperature Service (00002100-5B1E-4347-B07C-97B514DAE121,
+measurement ...2101 notify ~1 Hz, control point ...2102 write + indicate), parsed by `ble_parse.parse_core` (flags and
+length; quality "invalid" or 0x7FFF = no value). Saved per rider (`core_addr`, profiles; one rider only). When CORE
+reports "no heart rate", the fan writes the strap's to the control point once a second (0x13 + bpm; an empty 0x13 when
+the strap is gone). While it isn't connected, the saved CORE's advertising beacon (manufacturer 0x0BF6; the maker's notes say 0xF60B, both are read) gives the core
+temperature (`core_source` "beacon", no heat strain). Stale after 15 s (link) / 90 s (beacon). Without a saved CORE
+and with strap + trainer found, the search for one runs once a minute. Heat rule: `fan_logic` (Heat Strain Index
+>= `heat_levels` (per rider, default 3 / 7) -> at least level 2 / level 3, let go 0.5 lower, only while riding,
+per-rider `heat`). Leaders send
+`core` / `hsi` to linked fans. Radio: 4 outgoing connections at most (CYW43439: HCI 0x09 for a 5th), so strap +
+trainer + CORE leave one spare; one Share heart rate receiver (private test reports).
+
 **Share heart rate (`ble_share.py`)**, off by default: the fan also acts as a peripheral (aioble `peripheral.py` +
 `server.py`): Heart Rate service 0x180D with Heart Rate Measurement (notify) and Body Sensor Location (chest),
 advertised as `WattWind-XXXX HR` (the link id + " HR", appearance 0x0341; the same name as GAP Device Name
 0x2A00, which apps show after connecting: MicroPython's default there is "MPY BTSTACK"). `ble_sensors.on_hr` hands every fresh
 strap notification to `ble_share.send()`, unchanged (beat times included); nothing while the strap is off or missing.
-One receiver: no advertising while one is connected, so strap + trainer + receiver = the build's 3 connections.
+One receiver: no advertising while one is connected (strap + trainer + CORE + receiver fit the new UF2; on the 1.0
+UF2's 3 connections, strap + trainer + CORE leave none: `max_receivers` = 0 and the page says so).
 BTstack switches advertising back on by itself when a connection ends (measured), so while sharing is off the task
 stops it again for 5 s. Other fans never take a `WattWind… HR` name as their strap (`ble_share.is_share`). Not on a
-follower; paused during a firmware update. No pairing / bonding: MicroPython 1.29 builds BTstack on the rp2 without
-`MICROPY_PY_BLUETOOTH_ENABLE_PAIRING_BONDING` (only the NimBLE build has it), so the fan never answers a pairing
-request. Receivers that connect without pairing work (MyWhoosh, Wahoo Bolt V2 / Roam V2); a Garmin Edge 1040
-connects, gets data, then reports "pairing failed" (2026-11-02). Status: `hr_share` (off / waiting / connected), `hr_share_name`.
+follower; paused during a firmware update. Status: `hr_share` (off / waiting / connected), `hr_share_name`,
+`hr_share_pair` (on / unsupported), `hr_share_bonds` (paired receivers kept), `hr_share_secure` ("paired" while a
+paired receiver is connected, encrypted).
+
+**Pairing (`ble_bonds.py`, release 1.1)**: needs the 1.1 UF2 (`micropython/build.sh`,
+`micropython/btstack-pairing.patch`); `ble_bonds.supported()` = `bluetooth.BLE` has `gap_pair`. Stock MicroPython 1.29
+builds BTstack on the rp2 without pairing, and switched on it still lacks three things the patch adds: a Security
+Manager handler (Just Works approved while `ble.config(bond=True)`, else declined), a GAP Appearance (handle 5, written
+by `ble_share` as 0x0341; without it a Garmin Edge reads the services and gives up without asking to pair), and a key
+store: BTstack's TLV is handed to Python as `_IRQ_GET_SECRET` / `_IRQ_SET_SECRET` (sec_type 0x57, 4-byte tag), kept
+in `ble_bonds.json` (up to 4 paired devices + BTstack's random ER / IR). Unknown devices get "key missing" (LTK
+reconstruction off), so a receiver whose pairing was forgotten pairs again by itself. Always allowed on the pairing
+build (an off switch made a paired Edge reconnect every 10 s). Erase everything deletes the file; backups leave it out.
+Measured with an Edge 1040 (2026-11-03): pairs, reconnects after a restart, a power cut and a MicroPython update,
+re-pairs by itself after the keys were deleted. The stock UF2 with this firmware: pairing "unsupported", all else the same.
 
 ## Linked fans (`link.py`)
 

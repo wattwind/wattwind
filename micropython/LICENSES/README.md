@@ -1,7 +1,8 @@
 # Licences of the custom MicroPython (the UF2)
 
-The WattWind UF2 (`micropython/firmware/RPI_PICO2_W-v1.29.0-wattwind-ble3.uf2`, published as a release asset) is
-MicroPython v1.29.0 with one small change (`btstack-3-connections.patch`). Like every MicroPython build for the
+The WattWind UF2 (`micropython/firmware/RPI_PICO2_W-v1.29.0-wattwind-mp2.uf2` since release 1.1, the 1.0 file was
+`...-ble3.uf2`; published as a release asset) is MicroPython v1.29.0 with small changes (`btstack-3-connections.patch`,
+`btstack-pairing.patch`, the connection limit and a label set by `build.sh`). Like every MicroPython build for the
 Pico W / Pico 2 W, it contains code under these licences, and **this folder must be published with the UF2**
 (their terms ask for the notices to go with binary copies):
 

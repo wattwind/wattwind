@@ -54,7 +54,7 @@ updates is the phone's browser asking GitHub when the button is pressed, not the
 
 | # | | Status | Why / what |
 |---|---|---|---|
-| 5.4-1 | shall | **Accepted** | Wi-Fi password, PIN and link key are plain text in `config.json` on the Pico's flash. Reading them needs the USB port inside the closed box (physical access = owner). The RP2350's flash encryption / secure boot would lock out the builder (decided not to use) |
+| 5.4-1 | shall | **Accepted** | Wi-Fi password, PIN and link key are plain text in `config.json` on the Pico's flash; Bluetooth pairing keys (1.1, pairing UF2) in `ble_bonds.json`, with BTstack's own random ER / IR keys made once per fan (stock MicroPython uses fixed placeholder keys). Reading them needs the USB port inside the closed box (physical access = owner). The RP2350's flash encryption / secure boot would lock out the builder (decided not to use) |
 | 5.4-2 | shall | N/A | No hard-coded per-device identity used for security |
 | 5.4-3 | shall | OK | The default `wattwind` in the source is the factory-state password only (5.1-1); it is replaced at first setup. The update-signing key in the source is the *public* key, which is fine there |
 | 5.4-4 | shall | OK | Link keys are random per fan. Update checking uses a public key only (nothing secret on the fan) |
@@ -96,7 +96,7 @@ updates is the phone's browser asking GitHub when the button is pressed, not the
 | # | | Status | Why / what |
 |---|---|---|---|
 | 5.8-1 | should | Part | Live values (heart rate, power) go to the page over plain HTTP inside WPA2 |
-| 5.8-2 | shall | OK | Heart rate counts as health data. The linked-fans packets are encrypted (AES-128-CBC, random IV per packet) and signed (HMAC-SHA256, encrypt-then-MAC); only the fan id and name are readable. The page still uses plain HTTP inside WPA2 (5.5-1). The strap itself sends heart rate unencrypted over Bluetooth (the standard Heart Rate profile; outside WattWind's control). Share heart rate (off by default, opt-in on the page) passes it on the same way, unencrypted like a strap, to one app or watch that connects; the manual's Your data says so. Left open: the key crosses plain HTTP once, in the 60 s pairing window |
+| 5.8-2 | shall | OK | Heart rate counts as health data, and so does a CORE sensor's body temperature and heat strain (1.1): kept only in memory (and in a Detailed recording the user starts), sent only to paired linked fans (encrypted, like heart rate), never to the internet; the strap's heart rate goes to the user's own CORE only when CORE reports it has none. The linked-fans packets are encrypted (AES-128-CBC, random IV per packet) and signed (HMAC-SHA256, encrypt-then-MAC); only the fan id and name are readable. The page still uses plain HTTP inside WPA2 (5.5-1). The strap itself sends heart rate unencrypted over Bluetooth (the standard Heart Rate profile; outside WattWind's control). Share heart rate (off by default, opt-in on the page) passes it on the same way, unencrypted like a strap, to one app or watch that connects; one that pairs (1.1, pairing UF2; "Just Works", no code, so no protection against a man in the middle during pairing) gets it encrypted. The manual's Your data says so. Left open: the key crosses plain HTTP once, in the 60 s pairing window |
 | 5.8-3 | shall | OK | The manual lists what it senses: heart rate, power, cadence (Bluetooth sensors), the chip temperature |
 
 ## 5.9 Make systems resilient to outages
@@ -116,7 +116,7 @@ updates is the phone's browser asking GitHub when the button is pressed, not the
 
 | # | | Status | Why / what |
 |---|---|---|---|
-| 5.11-1 | shall | OK | Settings → **Erase everything** (PIN): config, riders, straps, Wi-Fi, PIN, link keys, logbooks; the fan restarts as new. Without the PIN: delete `config.json` over USB |
+| 5.11-1 | shall | OK | Settings → **Erase everything** (PIN): config, riders, straps, Wi-Fi, PIN, link keys, Bluetooth pairings (`ble_bonds.json`), logbooks; the fan restarts as new. Without the PIN: delete `config.json` over USB |
 | 5.11-2 | should | N/A | No associated services |
 | 5.11-3 | should | OK | The manual: Settings → Erase everything, and "Your data" |
 | 5.11-4 | should | OK | After the restart the page shows "Everything was erased" (the one-time notice) |

@@ -15,9 +15,10 @@ var INIT = window.DEMO_INIT || {};          // written by tools/make_site_demo.p
 var realFetch = window.fetch ? window.fetch.bind(window) : null;
 
 // ---- auto mode: a copy of firmware/fan_logic.py -------------------------------------------------------------------
-var LOGIC_SHA = '1b177db6b33b';             // first 12 hex digits of fan_logic.py's SHA-256 this copy matches
+var LOGIC_SHA = '8ee43a54744b';             // first 12 hex digits of fan_logic.py's SHA-256 this copy matches
 var RESPONSES = {calm: [20, 120, 90], normal: [12, 75, 60], quick: [6, 40, 30]};
 var TAU_HR_S = 5, STOP_POWER_W = 20, STOP_DETECT_S = 5, LOST_HOLD_S = 120, FORCED_STEP_S = 60, NUDGE_MAX = 2;
+var HEAT_LEVELS = [3.0, 7.0], HEAT_LET_GO = 0.5;   // CORE's Heat Strain Index: at least level 2 / 3, let go 0.5 below
 
 function ema(value, target, dt, tau) { return value + (target - value) * (1 - Math.exp(-dt / tau)); }
 function maxLevel(cfg) { return cfg.max_level == null ? 3 : cfg.max_level; }
@@ -27,8 +28,10 @@ function FanLogic(cfg) {
   this.p_score = null; this.hr_score = null; this.demand = null; this.basis = null; this.idle_s = 0;
   this._last_t = null; this._level_since = null; this._stop_since = null; this._lost_since = null;
   this._idle_since = null; this._forced_next = null; this.nudge = 0; this.target = 0; this.why = '';
+  this.heat_floor = 0; this.heat = false;
 }
-FanLogic.prototype.update = function (now, power, cadence, hr) {
+FanLogic.prototype.update = function (now, power, cadence, hr, hsi) {
+  if (hsi === undefined) hsi = null;
   var cfg = this.cfg, r = RESPONSES[cfg.response] || RESPONSES.normal, tauUp = r[0], tauDown = r[1], hold = r[2];
   var dt = this._last_t === null ? 0 : Math.max(0, now - this._last_t);
   this._last_t = now;
@@ -48,6 +51,7 @@ FanLogic.prototype.update = function (now, power, cadence, hr) {
   var scores = [ps, hs].filter(function (s) { return s !== null; });
   this.demand = scores.length ? Math.max.apply(null, scores) : null;
   this.basis = ps !== null && hs !== null ? 'both' : ps !== null ? 'power' : hs !== null ? 'hr' : null;
+  this.heat_floor = cfg.heat === false ? 0 : this._heatFloor(hsi, cfg.heat_levels || HEAT_LEVELS);
 
   var stopped = (cadence !== null && cadence === 0) || (power !== null && power < STOP_POWER_W);
   this._stop_since = stopped ? (this._stop_since !== null ? this._stop_since : now) : null;
@@ -70,7 +74,15 @@ FanLogic.prototype.update = function (now, power, cadence, hr) {
   var t = this.level + this.nudge;
   if (this.level === 0 && this.nudge > 0 && (stopped || lost)) t = 0;
   this.target = Math.max(0, Math.min(ml, t));
+  this.heat = !!(this.heat_floor && this.level > 0 && this.level <= this.heat_floor);
   return this.target;
+};
+FanLogic.prototype._heatFloor = function (hsi, on) {
+  if (hsi === null) return 0;
+  var f = this.heat_floor;
+  if (hsi >= on[1] || (f === 3 && hsi >= on[1] - HEAT_LET_GO)) return 3;
+  if (hsi >= on[0] || (f >= 2 && hsi >= on[0] - HEAT_LET_GO)) return 2;
+  return 0;
 };
 FanLogic.prototype.adopt = function (level, now, restartIdle) {
   this.level = level; this.target = Math.max(0, Math.min(3, level + this.nudge));
@@ -82,11 +94,15 @@ FanLogic.prototype._forcedDown = function (now, first, why) {
   if (this.level > 0 && now >= this._forced_next) { this._set(this.level - 1, now, why); this._forced_next = now + FORCED_STEP_S; }
 };
 FanLogic.prototype._hysteresis = function (now, stopped) {
-  if (this.demand === null) return;
+  if (this.demand === null && !this.heat_floor) return;
   var cfg = this.cfg, at = now - this._level_since, lv = this.level;
-  if (lv < maxLevel(cfg) && !stopped && this.demand >= cfg.up_thresholds[lv] && at >= cfg.dwell_up_s)
-    this._set(lv + 1, now, 'demand ' + this.demand.toFixed(2) + ' >= ' + cfg.up_thresholds[lv] + ' (' + this.basis + ')');
-  else if (lv > 0 && this.demand < cfg.down_thresholds[lv - 1] && at >= cfg.dwell_down_s)
+  var demandUp = lv < 3 ? (this.demand !== null && this.demand >= cfg.up_thresholds[lv]) : false;
+  var heatUp = lv < this.heat_floor;
+  if (lv < maxLevel(cfg) && !stopped && (demandUp || heatUp) && at >= cfg.dwell_up_s) {
+    if (demandUp) this._set(lv + 1, now, 'demand ' + this.demand.toFixed(2) + ' >= ' + cfg.up_thresholds[lv] + ' (' + this.basis + ')');
+    else this._set(lv + 1, now, 'heat strain from CORE: at least level ' + this.heat_floor);
+  } else if (lv > 0 && lv - 1 >= this.heat_floor && this.demand !== null &&
+             this.demand < cfg.down_thresholds[lv - 1] && at >= cfg.dwell_down_s)
     this._set(lv - 1, now, 'demand ' + this.demand.toFixed(2) + ' < ' + cfg.down_thresholds[lv - 1] + ' (' + this.basis + ')');
 };
 FanLogic.prototype._set = function (level, now, why) {
@@ -95,7 +111,8 @@ FanLogic.prototype._set = function (level, now, why) {
 window.DemoFanLogic = FanLogic;             // to compare it with fan_logic.py in a browser (same inputs, same levels)
 
 // ---- settings (like config.py, profiles.py, checks.py) -------------------------------------------------------------
-var FIELDS = ['ftp', 'hr_max', 'hr_rest', 'use', 'response', 'up_thresholds', 'down_thresholds', 'hr_addr'];
+var FIELDS = ['ftp', 'hr_max', 'hr_rest', 'use', 'response', 'up_thresholds', 'down_thresholds', 'hr_addr', 'heat',
+  'heat_levels'];
 var DEFAULTS = INIT.defaults || {};
 function copy(v) { return v && v.slice ? v.slice() : v; }
 function clone(o) { return JSON.parse(JSON.stringify(o)); }
@@ -131,6 +148,8 @@ function checkSettings(d) {                 // the rules of checks.py, with its 
     if (n && (typeof v !== 'number' || v % 1 || v < n[0] || v > n[1])) throw new Error(n[2] + ': a whole number from ' + n[0] + ' to ' + n[1]);
     if ((k === 'up_thresholds' || k === 'down_thresholds') && !(v.length === 3 && v.every(function (x) { return x > 0 && x <= 2; })))
       throw new Error('Step ' + (k === 'up_thresholds' ? 'up' : 'down') + ': each value must be a number above 0 and at most 2');
+    if (k === 'heat_levels' && !(v.length === 2 && v.every(function (x) { return typeof x === 'number' && x >= 1 && x <= 10; })))
+      throw new Error('Heat strain: each value a number from 1 to 10');
     if (k === 'hostname' && !/^[a-z0-9]([a-z0-9-]{0,30}[a-z0-9])?$/.test(v))
       throw new Error('Hostname: 1 to 32 characters, only a-z, 0-9 and - (no - at the start or end)');
     if (k === 'ap_password' && (v.length < 8 || v.length > 63)) throw new Error('Access point password: 8 to 63 characters');
@@ -142,6 +161,8 @@ function checkSettings(d) {                 // the rules of checks.py, with its 
   if (m.hr_rest >= m.hr_max) throw new Error('HR rest must be below HR max');
   var up = m.up_thresholds, down = m.down_thresholds;
   for (i = 0; i < 3; i++) if (!(down[i] < up[i])) throw new Error('Level ' + (i + 1) + ': step down (' + down[i] + ') must be below step up (' + up[i] + ')');
+  if (m.heat_levels && !(m.heat_levels[0] < m.heat_levels[1]))
+    throw new Error('Heat strain: level 2 (' + m.heat_levels[0] + ') must be below level 3 (' + m.heat_levels[1] + ')');
   [['up', up], ['down', down]].forEach(function (r) {
     for (i = 0; i < 2; i++) if (!(r[1][i] < r[1][i + 1]))
       throw new Error('Step ' + r[0] + ': level ' + (i + 1) + ' (' + r[1][i] + ') must be below level ' + (i + 2) + ' (' + r[1][i + 1] + ')');
@@ -223,7 +244,7 @@ function status() {
     power: S.power, cadence: S.cadence, hr: S.hr, hr_connected: true, power_connected: true,
     hr_name: 'HRM-Dual', power_name: 'KICKR CORE',
     p_ema: logic.p_ema, p_score: logic.p_score, hr_score: logic.hr_score, demand: logic.demand, basis: logic.basis,
-    hr_off: false, hr_caps: 'contact, beat times', hr_share: S.share, hr_share_name: 'WattWind-4F2A HR',
+    hr_off: false, hr_caps: 'contact, beat times', hr_share: S.share, hr_share_name: 'WattWind-4F2A HR', hr_share_pair: 'on', hr_share_bonds: 0, hr_share_secure: '', mp_build: 2, core_connected: false, core_name: '', core_temp: null, core_skin: null, core_hsi: null, core_quality: null, core_source: null, core_battery: null, core_hr_state: null, core_hr: null, core_raw: null, core_adv: null, hr_rssi: [-68, 40], power_rssi: [-71, 300], core_rssi: null, heat: false, heat_floor: 0, hr_share_receivers: S.share === 'connected' ? 1 : 0, hr_share_limit: 1,
     wifi: 'sta', ssid: 'HomeWiFi', ip: '192.168.1.50', rider: riderName(),
     uptime: S.up, notice: S.notice || null, manual_left_s: S.mode === 'manual' ? S.manual_left : null, nudge: S.nudge,
     off_left_s: S.off_at === null ? null : Math.max(0, S.off_at - S.up),
@@ -288,14 +309,15 @@ function handle(method, path, q, b) {
     event('rider ' + a + ': now ' + ps[cfg.profile].name); return [publicCfg()];
   }
   if (path === '/api/reset') {
-    var keys = {rider: ['ftp', 'hr_max', 'hr_rest', 'use', 'response', 'up_thresholds', 'down_thresholds'],
+    var keys = {rider: ['ftp', 'hr_max', 'hr_rest', 'use', 'response', 'up_thresholds', 'down_thresholds', 'heat',
+      'heat_levels'],
       fan: ['dwell_up_s', 'dwell_down_s', 'manual_timeout_min', 'idle_off_min', 'max_level']}[b.what];
     if (!keys) return err(400, 'what: rider or fan');
     keys.forEach(function (k) { cfg[k] = copy(DEFAULTS[k]); }); sync();
     event('settings: ' + b.what + ' values back to the defaults'); return [publicCfg()];
   }
   if (path === '/api/scan') return [{devices: [
-    {name: 'HRM-Dual', addr: 'c4:11:22:33:44:55', types: ['hr'], connected: true, rssi: null},
+    {name: 'HRM-Dual', addr: 'c4:11:22:33:44:55', types: ['hr'], connected: true, rssi: -68},
     {name: 'KICKR CORE', addr: 'd8:66:77:88:99:aa', types: ['power'], connected: true, rssi: null},
     {name: 'HRM-Pro', addr: 'e2:12:34:56:78:9a', types: ['hr'], connected: false, rssi: -74},
     {name: 'Assioma', addr: 'f1:98:76:54:32:10', types: ['power'], connected: false, rssi: -81}]}, 200, 3000];

@@ -22,7 +22,8 @@ ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "firmware"
 SKIP_DIRS = {"tests", "__pycache__", ".pytest_cache"}
 SKIP_FILES = {"manifest.json", "README.md", "config.json", "config.json.bad", "pytest.ini", "relay_test.py", "blink.py",
               "log.txt", "log.old.txt", "quick_boots.txt", "reset_reason.txt", "erased.txt",
-              "detail.txt", "detail.old.txt", "detail.json", "crash_boots.txt", "config.json.tmp"}
+              "detail.txt", "detail.old.txt", "detail.json", "crash_boots.txt", "config.json.tmp",
+              "ble_bonds.json", "ble_bonds.json.tmp"}
 
 
 def wanted(rel):
@@ -46,15 +47,28 @@ def files(root=ROOT):
     return out
 
 
-def version(root=ROOT):
+def _version_py(root=ROOT):
     ns = {}
     with open(os.path.join(root, "version.py"), encoding="utf-8") as f:
         exec(f.read(), ns)
-    return ns.get("VERSION", "?")
+    return ns
+
+
+def version(root=ROOT):
+    return _version_py(root).get("VERSION", "?")
+
+
+def mp_build_needed(root=ROOT):
+    """version.py MP_BUILD_NEEDED: the oldest MicroPython file (firmware/mpbuild.py) the firmware needs; 1 = any."""
+    n = _version_py(root).get("MP_BUILD_NEEDED", 1)
+    return n if isinstance(n, int) and n > 1 else 1
 
 
 def main(root=ROOT):
     data = {"version": version(root), "files": files(root)}
+    need = mp_build_needed(root)
+    if need > 1:                        # in the signed manifest: fans on 1.1+ refuse it on an older MicroPython
+        data["requires"] = {"mp_build": need}
     with open(os.path.join(root, "manifest.json"), "w", encoding="utf-8", newline="\n") as f:
         json.dump(data, f, indent=1, sort_keys=True)
         f.write("\n")

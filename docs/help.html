@@ -80,13 +80,20 @@ starts when you ride), <i>Back to Auto in …</i> or <i>Off in …</i> (Manual),
 <li><b>W, rpm, bpm</b>: power, cadence and heart rate. <b>–</b> means no data.</li>
 <li><b>demand</b>: how hard you are working, 0 to about 1 (<a href="#auto">How Auto decides</a>). Auto picks
 the level from it. Next to it, what decided: <i>power</i>, <i>heart rate</i> or <i>both</i>. When one sensor is
-missing, it shows the other one taking over.</li>
+missing, it shows the other one taking over. Demand comes from power and heart rate only; a CORE sensor's heat
+strain works separately, as a minimum level (below).</li>
+<li><b>Core</b> (only with a CORE body temperature sensor): your core temperature, skin temperature and CORE's
+<b>heat strain</b> with its heat zone; orange in zone 3, red in zone 4. <i>→ fan at least level 2 / 3</i>: in Auto,
+the heat strain is high enough to keep the fan at least at that level while you ride (Heat from CORE). <i>Quality poor / fair</i>: CORE's own note
+that its estimate isn't settled yet (after putting it on, or without heart rate at hard efforts). <i>From its signal</i>: the fan reads the temperature CORE sends out
+while it isn't connected; heat strain needs the connection.</li>
 <li><b>Rider</b>: who is selected, shown when there is more than one rider.</li>
 <li><b>Dots</b>: <b>Sensors</b>, filled green = connected, red ring = not connected or, for heart rate,
 <i>(not worn)</i>; <i>· shared</i> = an app or watch gets the heart rate through the fan (Share heart rate,
-<a href="#sensors">Sensors</a>). On a linked fan: <b>Leader</b>, filled green = its leader is heard.</li>
-<li><b>Orange line</b> (only when needed): a sensor battery at 15 % or less, the controller running hot (chip
-at 70 °C or more), firmware files that don't match (<a href="#trouble">Troubleshooting</a>), a <i>test
+<a href="#sensors">Sensors</a>); a third dot for a CORE sensor, while one is connected or its signal is heard. On a linked fan: <b>Leader</b>,
+filled green = its leader is heard.</li>
+<li><b>Orange line</b> (only when needed): a sensor battery at 15 % or less (CORE's too), heat strain in CORE's
+zone 4 (7 or more: ease off, cool down, drink), the controller running hot (chip at 70 °C or more), firmware files that don't match (<a href="#trouble">Troubleshooting</a>), a <i>test
 version</i> (below), or a <i>Safe start</i> (<a href="#trouble">Troubleshooting</a>).</li>
 <li><b>Set up your fan</b> (a card at the top, only until it is done): your own access point password and settings
 PIN, at the first start, after a PIN reset or after Erase everything. The settings stay locked until then; the fan
@@ -145,6 +152,13 @@ Start pedaling again and it carries on from where it is.</li>
 <b>Both missing</b>: keeps the level 2 minutes, then one level down per minute.</li>
 <li>Power is smoothed: it rises within seconds when you push, and falls slowly when you ease off,
 so short recoveries don't switch the fan down.</li>
+<li><b>Heat from CORE</b> (with a CORE body temperature sensor; on unless switched off for the rider): CORE's
+<b>heat strain</b> keeps the fan at least at <b>level 2 from 3</b> (CORE's heat zone 3: "adjust pacing, hydrate and
+cool") and at <b>level 3 from 7</b> (zone 4), while you ride, even when your power and heart rate alone would say
+less. Both values can be changed per rider (Settings). CORE's heat strain normally runs from 0 to 10. It lets go 0.5
+lower (below 2.5 and 6.5), so it doesn't flicker. The same step-up times apply, <b>Highest level</b> still
+caps it, and after the ride the fan winds down and goes off as usual. Higher demand still steps up as before.
+The Core line on the screen shows it: <i>→ fan at least level 2</i> (or 3).</li>
 </ul>
 <h3>In training-zone terms</h3>
 <p>The two scores are the usual training measures, so the step levels can be read in your zones:</p>
@@ -196,7 +210,7 @@ at the top.</p>
 <li><b>Rider</b>: several people can share the fan.
 <ul>
 <li><b>Saved per rider</b>: FTP, HR max / rest, Decide by, fan response, the step up / down levels (someone who runs hot
-can get the fan earlier) and the heart-rate strap. Everything else is shared.</li>
+can get the fan earlier), Heat from CORE and its levels, the heart-rate strap and the CORE sensor. Everything else is shared.</li>
 <li><b>Add</b> creates a rider with the default values (then enter theirs); <b>Rename</b> and <b>Delete</b> work
 on the selected one. The last rider can't be deleted.</li>
 <li><b>A rider's strap</b>: select the rider, wear the strap, then under Sensors <b>Find sensors</b> and
@@ -214,6 +228,11 @@ never reset there.</li>
 is off by 10 bpm or more for many people, and that shifts when the fan reacts to your heart rate. HR max: the
 highest value your watch or training app has recorded in a hard all-out effort (often in its zone settings).
 HR rest: in the morning, lying down, before getting up. The defaults (190 / 60) suit an average 30-year-old.</li>
+<li><b>Heat from CORE</b> (only matters with a CORE sensor): the tick box switches the heat rule on or off for this
+rider (it saves at once; the Core line still shows the values when it's off). <b>Level 2 from heat strain</b> /
+<b>Level 3 from heat strain</b>: the heat strain from which the fan runs at least at that level while you ride
+(defaults 3 and 7, CORE's heat zones 3 and 4; 1 to 10, level 2's value below level 3's). Lower values bring the fan
+earlier, for a rider who runs hot (<a href="#auto">How Auto decides</a>).</li>
 <li><b>Decide by</b>: what Auto follows when both sensors are there. <b>Power and heart rate</b> (the default)
 takes whichever says you are working harder. If the chosen one is missing, Auto uses the other, so the fan
 keeps working.
@@ -277,7 +296,7 @@ To hear about new versions without checking, open the project on GitHub (<i>gith
 Releases</b> (needs a free GitHub account): GitHub then emails you when one comes out.</li>
 <li><b>Line at the bottom</b>: firmware version and the boards it is made for, how long the fan has been running, why it last
 restarted, the firmware file check (<i>files: ok</i>, see below), the Wi-Fi signal (weaker than about -75 dBm can drop out), the Pico chip's temperature, the
-sensors' battery level if they report it, <i>(test version)</i> for a test build and <i>detailed recording on</i> while
+sensors' battery level if they report it (read when a sensor connects, then every 10 minutes), <i>(test version)</i> for a test build and <i>detailed recording on</i> while
 one runs. Useful when asking for help. The chip temperature is not the room
 or box temperature: the chip warms itself (processor and radio), so it reads about 10-15 °C above the air,
 and its sensor is only roughly accurate. It is there to spot the box getting hot, not to read the room.</li>
@@ -296,7 +315,8 @@ and why, from your phone. <b>Download</b> (in the logbook) saves a diagnostics f
 PIN or keys), free space, memory and Wi-Fi state. Send it when you ask for help, but privately: it contains your
 network name and your sensors' addresses.</li>
 <li><b>Detailed recording</b> (Settings → Maintenance), for finding a problem: for 24 h the fan records every second
-what it gets (power, cadence, heart rate) and what it does (level, mode), every minute its memory, Wi-Fi signal and
+what it gets (power, cadence, heart rate; with a CORE: core and skin temperature, heat strain and quality) and what
+it does (level, mode), every minute its memory, Wi-Fi signal and
 how promptly it runs, and events such as sensor data gaps over 2 s, in a file of its own (the normal logbook keeps
 its history). <b>Start recording</b>, ride until the problem shows, then <b>Download recording</b> and send it with
 your report. It also continues after a restart (often the problem itself). It stops by itself after 24 h; the file
@@ -304,7 +324,7 @@ stays for download and is deleted 7 days later, at the next Start, with <b>Delet
 When full it drops its oldest part, keeping the latest 5-6 hours of riding. A firmware update that needs the space
 deletes it, and so does installing an older firmware that doesn't have this feature. It holds your heart rate: share it only with someone you trust.</li>
 <li><b>Erase everything</b>: before giving the fan away, or to start again. Deletes all settings, riders,
-sensors, the Wi-Fi network, the PIN, the linked-fans keys, the logbook and a detailed recording (settings PIN). The fan restarts as
+sensors, the Wi-Fi network, the PIN, the linked-fans keys, paired apps and watches, the logbook and a detailed recording (settings PIN). The fan restarts as
 new: its own access point <b>WattWind-XXXX</b> with the password <i>wattwind</i>, the page says <i>Everything was
 erased</i> and shows the setup card. The firmware stays. To keep your settings, download a backup first (above): <b>Restore from a file</b> puts them
 back afterwards.</li>
@@ -315,12 +335,23 @@ back afterwards.</li>
 <h2>Sensors</h2>
 <ul>
 <li>The fan uses one <b>heart rate</b> sensor and one <b>power</b> sensor (a smart trainer or power meter),
-both at once.</li>
+both at once, and, if you have one, a <b>CORE</b> body temperature sensor as a third.</li>
 <li>With none chosen, it takes the <b>first one it finds</b> and remembers it, so it won't later pick up
 another rider's sensor.</li>
 <li><b>Find sensors</b> lists what is nearby; <b>Use</b> picks one. <b>Forget</b> disconnects the current
-one and takes the first one found again.</li>
+one and takes the first one found again. Each sensor shows its signal in dBm (also when connected, if the fan hears
+it): weaker than about -90 dBm (<i>weak</i>) can drop out: move the fan closer, or wear the sensor on the side
+facing it (your body blocks the signal). The lines above the button show the chosen sensors: name, address, connected
+or not, and the signal the last time the fan heard it (in Find sensors, or while looking for it after a drop; "5 min
+ago" when not just now).</li>
 <li>Wake the sensor first: wear the strap (moisten it), start pedaling on the trainer.</li>
+<li><b>CORE</b> (greenTEG's body temperature sensor; release 1.1): the fan connects to it like to a strap, saves it
+for the selected rider, and shows your core temperature and heat strain (<a href="#screen">The screen</a>), which
+Auto can use (<a href="#auto">How Auto decides</a>, Heat from CORE). <b>Find sensors</b> lists it as <i>CORE</i>:
+<b>Use as CORE</b>. CORE is more accurate with your heart rate: if it reports that it gets none, the fan sends it the
+strap's, once a second; if CORE already gets heart rate from your strap (set up in the CORE app), the fan leaves it
+alone. While CORE isn't connected, the fan still reads the temperature CORE sends out (<i>from its signal</i>; no
+heat strain then). No pairing needed. Your watch or bike computer can stay connected to CORE at the same time.</li>
 <li><b>Strap taken off</b>: some straps keep sending their last value for a minute or two. The fan notices within
 a few seconds if the strap reports skin contact or beat-to-beat times (most chest straps do) and shows
 <i>(not worn)</i>; Auto then goes by power. The fan remembers which straps send beat-to-beat times, so this also
@@ -336,8 +367,15 @@ watch, add a heart-rate sensor and choose that name instead of the strap. It sen
 (heart rate and beat-to-beat times), and nothing while the strap is off or missing. One app or watch at a time.
 The line below the tick box says whether it is waiting or connected, and the status shows <i>· shared</i> next to
 the strap's name. Not on a follower (it has Bluetooth off). It works with apps and bike computers that connect
-without pairing (tried: MyWhoosh, Wahoo ELEMNT Bolt and Roam). A Garmin Edge says <i>pairing failed</i>: the fan
-can't pair (a limit of its Bluetooth software). Garmin devices take the strap over ANT+ directly, so use that.</li>
+without pairing (tried: MyWhoosh, Wahoo ELEMNT Bolt and Roam), and with those that pair, such as a Garmin Edge
+(tried: Edge 1040): it pairs once, without a code, and then reconnects by itself, also after the fan restarts or
+loses power. Pairing needs the MicroPython file of release 1.1 or later on the fan; the line below the tick box says
+if this fan has it. With an older file a Garmin says <i>pairing failed</i>: install the new file once over USB
+(build guide), or let the Garmin take the strap over ANT+. The older file also allows only 3 Bluetooth connections
+(the new one: up to 4 sensors plus 1 app or watch): with a strap, a trainer and a CORE sensor they are all in use, and
+the line below the tick box says that no app or watch can connect (also before you tick it). The tick box stays on: sharing starts once the new
+file is installed. <b>Erase everything</b> forgets the paired devices; a
+Garmin then pairs again by itself the next time it connects.</li>
 </ul>
 </section>
 
@@ -351,8 +389,8 @@ other fan, press <b>Follow</b> next to the leader in the same list. It restarts 
 <li><b>Same level</b>: the follower runs at the leader's level, whatever the leader does (Auto, the buttons, the off
 timer), so the leader's page works as one remote for all of them. <i>One / two lower</i> makes it a gentler side fan that joins in with harder efforts: one lower is off while the
 leader is at 1, two lower runs only when the leader is at 3. <i>One higher</i> suits a weaker or farther fan (when the leader is off, it is off too).
-<b>Own settings</b>: it takes the leader's heart rate and power and decides with its own Auto settings, for
-example a fan that only starts at harder efforts.</li>
+<b>Own settings</b>: it takes the leader's heart rate and power (and a CORE's heat strain) and decides with its
+own Auto settings, for example a fan that only starts at harder efforts.</li>
 <li>On the follower, Settings → Linked fans: <b>Follow</b> (same level / own settings) and <b>Level</b> apply
 at once, no restart.</li>
 <li>The follower's own buttons still work; its <b>Follow</b> button (where Auto is) hands it back to the leader.
@@ -530,19 +568,22 @@ else; the only thing it asks the internet is the time (below). <b>Check for upda
 only when you press it.</p>
 <ul>
 <li><b>Stored on the fan</b>: the settings (riders' names, FTP and heart-rate range, the sensors' Bluetooth
-addresses, the Wi-Fi network and password, the PIN, the linked-fans key) and the logbook (events and a status line,
-without heart rate or power values). Heart rate, power and cadence are only kept in memory while you ride, unless you
-start a <b>Detailed recording</b> (Maintenance): then they are kept, second by second, for up to 24 h, and the file
-is deleted 7 days later at the latest.</li>
+addresses, the Wi-Fi network and password, the PIN, the linked-fans key), the pairing keys of apps and watches that
+paired with Share heart rate, and the logbook (events and a status line,
+without heart rate or power values). Heart rate, power, cadence and a CORE sensor's body and skin temperature and heat strain
+are only kept in memory while you ride, unless you start a <b>Detailed recording</b> (Maintenance): then they are
+kept, second by second, for up to 24 h, and the file is deleted 7 days later at the latest.</li>
 <li><b>Leaves the fan</b>: the page you open, over your home network (plain HTTP, inside your Wi-Fi's encryption);
-on a leader of linked fans, one packet a second on the home network with its level, heart rate, power and cadence
-(encrypted, readable only by its paired fans); with <b>Share heart rate</b> on, your heart rate over Bluetooth to
+on a leader of linked fans, one packet a second on the home network with its level, heart rate, power, cadence
+and, with a CORE, body temperature and heat strain (encrypted, readable only by its paired fans); with a CORE that
+gets no heart rate of its own, your heart rate to the CORE; with <b>Share heart rate</b> on, your heart rate over Bluetooth to
 the app or watch connected to it (below); and a time query to the internet
 (NTP), for the logbook's clock. Not from the fan: <b>Check for updates</b> (Maintenance) is a question from your
 phone or computer to GitHub, only when you press it, so GitHub sees your internet address, as with any website.</li>
 <li><b>Sensors</b>: heart-rate straps send their values unencrypted over Bluetooth (that is how the standard
 works, for every receiver); the fan only listens to the ones it has saved. With <b>Share heart rate</b> on, the fan
-sends your heart rate the same way, like a strap: any app or watch nearby can connect to it, one at a time.</li>
+sends your heart rate the same way, like a strap: any app or watch nearby can connect to it, one at a time. One that
+pairs (a Garmin Edge) gets it encrypted.</li>
 <li><b>Delete it</b>: Settings → <b>Erase everything</b> (above). The page confirms it after the restart.</li>
 </ul>
 </section>

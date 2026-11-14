@@ -151,3 +151,101 @@ def test_first_found_never_takes_another_riders_strap(ble):
     profiles.activate(bs._cfg, 0)                        # Rider 1 has no strap yet
     assert not bs._may_take("hr", B)                     # Anna's strap is not taken over by Rider 1
     assert bs._may_take("hr", A)                         # an unknown strap is
+
+
+class _Chr:
+    def __init__(self, value=b""):
+        self.value = value
+        self.writes = []
+
+    async def write(self, data, response=False):
+        self.writes.append(bytes(data))
+
+    async def subscribe(self, notify=False, indicate=False):
+        pass
+
+    async def read(self, timeout_ms=None):
+        return self.value
+
+
+class _Svc:
+    def __init__(self, uuid, chars):
+        self.uuid = UUID(uuid)
+        self.chars = chars
+
+    async def characteristic(self, uuid):
+        return self.chars.get(uuid.v)
+
+
+class _Conn:
+    def __init__(self, svcs):
+        self.svcs = svcs
+
+    async def services(self):
+        for s in self.svcs:
+            yield s
+
+
+CORE_SVC = "00002100-5b1e-4347-b07c-97b514dae121"
+
+
+def _core_conn(name):
+    return _Conn([_Svc(0x1800, {0x2A00: _Chr(name)}),
+                  _Svc(CORE_SVC, {"00002101-5b1e-4347-b07c-97b514dae121": _Chr(),
+                                  "00002102-5b1e-4347-b07c-97b514dae121": _Chr()})])
+
+
+def test_sensor_without_advertised_name_gets_its_device_name(ble):
+    # The real CORE advertises no name (2026-11-08): the name is read from Generic Access after connecting.
+    import asyncio
+    bs, state, _ = ble
+    bs._names[A] = ""
+    link = bs.Link(_core_conn(b"CORE 12AB"), A)
+    assert asyncio.run(link.setup()) == ["core"]
+    assert bs._names[A] == "CORE 12AB"
+    bs._claim("core", A)
+    assert state.core_name == "CORE 12AB"
+
+
+def test_core_heart_rate_input_cleared_on_connect(ble):
+    # A CORE that got the fan's heart rate before a restart keeps the last bpm and says "receiving" (measured
+    # 2026-11-08): clearing it on connect lets CORE say "none" again, so the fan starts sending the live value.
+    import asyncio
+    bs, _, _ = ble
+    conn = _core_conn(b"CORE 12AB")
+    link = bs.Link(conn, A)
+    asyncio.run(link.setup())
+    assert link.core_ctrl.writes == [b""] and not link.core_fwd
+
+
+def test_saved_sensors_signal_is_kept(ble):
+    bs, state, _ = ble
+    bs._cfg["hr_addr"] = A
+    state.uptime_s = 10
+    bs._hear(B, -60)                                          # not a saved sensor: not kept
+    bs._hear(A, -80)
+    assert state.heard == {A: (-80, 10)}
+    bs._cfg["hr_addr"] = B                                     # another strap chosen: the old one goes
+    bs._hear(B, -61)
+    assert state.heard == {B: (-61, 10)}
+
+
+def test_core_raw_packet_and_advertising_kept_as_hex(ble):
+    import types
+    bs, state, _ = ble
+    bs._cfg["core_addr"] = A
+    link = bs.Link(None, A)
+    bs._claim("core", A)
+    pkt = bytes([0x37, 0x6E, 0x0E, 0xDC, 0x0D, 0, 0, 0x24, 0x4C, 0])
+    link.on_core(pkt)
+    assert state.core_raw == pkt.hex() and link.core_logged == 1
+    bs._hear(A, -80, types.SimpleNamespace(adv_data=b"", resp_data=None))
+    assert state.core_adv == ["020106", ""]
+
+
+def test_advertised_name_is_kept(ble):
+    import asyncio
+    bs, _, _ = ble
+    bs._names[A] = "Advertised"
+    asyncio.run(bs.Link(_core_conn(b"Other"), A).setup())
+    assert bs._names[A] == "Advertised"

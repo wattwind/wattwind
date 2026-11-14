@@ -1,9 +1,15 @@
-"""BLE central: heart rate strap and trainer (power, cadence), connected at the same time.
+"""BLE central: heart rate strap, trainer (power, cadence) and CORE body temperature sensor, at the same time.
 
-Two roles: "hr" (Heart Rate 0x180D) and "power" (Cycling Power 0x1818, Fitness Machine 0x1826
-as fallback). One device may serve both (a Pico-based BLE simulator does). A role only takes
-a device whose address matches the saved one (config hr_addr / power_addr); if none is saved,
-the first matching device found is used and saved, so other riders' sensors are left alone.
+Three roles: "hr" (Heart Rate 0x180D), "power" (Cycling Power 0x1818, Fitness Machine 0x1826 as fallback) and
+"core" (CORE's Core Body Temperature Service, release 1.1: core / skin temperature, Heat Strain Index, quality).
+One device may serve several (a Pico-based BLE simulator does). A role only takes a device whose address matches
+the saved one (config hr_addr / power_addr / core_addr); if none is saved, the first matching device found is used
+and saved, so other riders' sensors are left alone. Strap and CORE are per rider (profiles).
+
+CORE: when it reports that it gets no heart rate, the fan sends it the strap's (Control Point 0x13, once a
+second; an empty 0x13 stops it). While CORE isn't connected, its saved address's advertising still carries the
+core temperature (beacon): read during the scans (no Heat Strain Index there).
+The radio chip allows 4 outgoing connections: strap + trainer + CORE = 3 (measured).
 
 Cadence: from crank data in Cycling Power if the trainer sends it, otherwise from the FTMS
 Indoor Bike Data. Values go stale (None) after 5 s without a notification.
@@ -12,6 +18,7 @@ Reconnects with backoff. This task never touches relays; it only writes sensor v
 
 import asyncio
 import time
+import binascii
 import bluetooth
 
 import aioble
@@ -20,7 +27,7 @@ import profiles
 import state
 import detail
 import ble_share
-from ble_parse import parse_hr_full, HrContact, parse_cp, parse_bike, CrankCadence
+from ble_parse import parse_hr_full, HrContact, parse_cp, parse_bike, CrankCadence, parse_core, parse_core_beacon
 
 HR_SVC = bluetooth.UUID(0x180D)
 HR_CHR = bluetooth.UUID(0x2A37)
@@ -28,11 +35,21 @@ CP_SVC = bluetooth.UUID(0x1818)
 CP_CHR = bluetooth.UUID(0x2A63)
 FTMS_SVC = bluetooth.UUID(0x1826)
 BIKE_CHR = bluetooth.UUID(0x2AD2)
+CORE_SVC = bluetooth.UUID("00002100-5b1e-4347-b07c-97b514dae121")       # Core Body Temperature Service
+CORE_TEMP_CHR = bluetooth.UUID("00002101-5b1e-4347-b07c-97b514dae121")  # measurement (notify, 1 Hz)
+CORE_CTRL_CHR = bluetooth.UUID("00002102-5b1e-4347-b07c-97b514dae121")  # control point (write + indicate)
+CORE_COMPANIES = (0x0BF6, 0xF60B)    # manufacturer data in CORE's advertising: the beacon. The real CORE sends the
+                                     # bytes F6 0B (= 0x0BF6, measured 2026-11-08); the maker's notes show 0B F6
+CORE_STALE_MS = 15000                # core temperature changes slowly; CORE notifies about once a second
+BEACON_STALE_MS = 90000
 BATT_SVC = bluetooth.UUID(0x180F)     # Battery Service (optional; straps and power meters often have it)
 BATT_CHR = bluetooth.UUID(0x2A19)
 BATT_READ_S = 600                    # battery level is read on connect, then this often
+GAP_SVC = bluetooth.UUID(0x1800)      # Generic Access: the device name, for sensors that advertise none (CORE)
+NAME_CHR = bluetooth.UUID(0x2A00)
 
-ROLES = ("hr", "power")
+ROLES = ("hr", "power", "core")
+CORE_SCAN_S = 60           # strap + trainer found, no CORE saved: look for a CORE only this often
 SCAN_MS = 5000
 UI_SCAN_MS = 4000
 CONNECT_TIMEOUT_MS = 10000
@@ -42,9 +59,10 @@ RETRY_MAX_S = 15           # a strap that drops out mid-ride is back within ~20 
 
 # aioble cancels a running scan when it connects, so scans and connection attempts take turns.
 _radio = asyncio.Lock()
-_owner = {"hr": None, "power": None}   # role -> address of the link serving it
-_names = {}                            # address -> advertised name
-_last = {"hr": None, "power": None}    # role -> ticks_ms of the last notification
+_owner = {"hr": None, "power": None, "core": None}   # role -> address of the link serving it
+_names = {}                            # address -> advertised name (or the device name read after connecting)
+_last = {"hr": None, "power": None, "core": None}    # role -> ticks_ms of the last notification
+_beacon = {"ms": None}                 # ticks_ms of the last CORE beacon reading
 _cfg = None
 _expire_task = None
 
@@ -70,6 +88,8 @@ def _may_take(role, addr):
         return False
     if role == "hr" and not saved:           # first found: never another rider's registered strap
         return profiles.owner_of(_cfg, addr) is None
+    if role == "core" and not saved:         # ... nor another rider's CORE
+        return profiles.owner_of(_cfg, addr, "core_addr") is None
     return not saved or saved == addr
 
 
@@ -79,6 +99,8 @@ def _offers(services):
         roles.append("hr")
     if CP_SVC in services or FTMS_SVC in services:
         roles.append("power")
+    if CORE_SVC in services:
+        roles.append("core")
     return roles
 
 
@@ -103,9 +125,19 @@ def _release(role, addr):
     if role == "hr":
         state.hr = None
         state.hr_off = None
+    elif role == "core":
+        _core_clear()
     else:
         state.power = None
         state.cadence = None
+
+
+def _core_clear(keep_beacon=False):
+    if keep_beacon and state.core_source == "beacon":
+        return
+    state.core_temp = state.core_skin = state.core_hsi = state.core_quality = state.core_hr_state = None
+    state.core_hr = state.core_raw = None
+    state.core_source = None
 
 
 def _review(link):
@@ -140,6 +172,9 @@ class Link:
         self.hrc = HrContact(time.ticks_diff, addr in (_cfg or {}).get("hr_rr", []), time.ticks_ms())
                                                  # is the strap on the skin (any strap: what it reports)
         self.batt_ch = None
+        self.core_ctrl = None        # CORE's control point (heart rate input)
+        self.core_fwd = False        # sending the strap's heart rate to CORE
+        self.core_logged = 0         # CORE packets written to the logbook as hex (the first 2 per connection)
 
     async def setup(self):
         services = []
@@ -172,11 +207,35 @@ class Link:
                 self.subs.append((bike_ch, self.on_bike))
             if cp_ch or bike_ch:
                 self.roles.append("power")
+        if _may_take("core", self.addr) and find(CORE_SVC):
+            ch = await find(CORE_SVC).characteristic(CORE_TEMP_CHR)
+            if ch:
+                await ch.subscribe(notify=True)
+                self.subs.append((ch, self.on_core))
+                self.roles.append("core")
+                try:                 # answers come as indications: they must be switched on before a write
+                    self.core_ctrl = await find(CORE_SVC).characteristic(CORE_CTRL_CHR)
+                    if self.core_ctrl:
+                        await self.core_ctrl.subscribe(indicate=True)
+                except Exception:
+                    self.core_ctrl = None
+                if self.core_ctrl:
+                    try:             # clear heart rate we may have sent before a restart: CORE keeps the last
+                        await self.core_ctrl.write(b"", True)   # one and says "receiving" (2026-11-08)
+                    except Exception:
+                        pass
         if self.roles and find(BATT_SVC):
             try:
                 self.batt_ch = await find(BATT_SVC).characteristic(BATT_CHR)
             except Exception:
                 self.batt_ch = None
+        if self.roles and not _names.get(self.addr) and find(GAP_SVC):
+            try:                     # CORE advertises without a name: ask it
+                ch = await find(GAP_SVC).characteristic(NAME_CHR)
+                if ch:
+                    _names[self.addr] = bytes(await ch.read(timeout_ms=2000)).decode()[:32].strip()
+            except Exception:
+                pass
         return self.roles
 
     async def _read_battery(self):
@@ -189,6 +248,8 @@ class Link:
             state.hr_battery = level
         if "power" in self.roles:
             state.power_battery = level
+        if "core" in self.roles:
+            state.core_battery = level
 
     def _mine(self, role):
         if _owner[role] != self.addr:
@@ -219,6 +280,41 @@ class Link:
         self._mine("hr")
         state.hr = hr
         ble_share.send(data)             # heart rate sharing, if on and an app is connected
+
+    def on_core(self, data):
+        raw = binascii.hexlify(bytes(data)).decode()
+        if self.core_logged < 2:     # the real bytes, for checking the parser and the simulator later
+            self.core_logged += 1
+            log("CORE packet", raw)
+        d = parse_core(data)
+        if d is None or not self._mine("core"):
+            return
+        state.core_raw = raw
+        state.core_temp = d["core"]
+        state.core_skin = d["skin"]
+        state.core_hsi = d["hsi"]
+        state.core_quality = d["quality"]
+        state.core_hr_state = d["hr_state"]
+        state.core_hr = d["hr"]
+        state.core_source = "link"
+
+    async def _core_heart_rate(self):
+        """Once a second: CORE without heart rate gets the strap's (0x13); none to send: stop (empty 0x13)."""
+        if not self.core_ctrl:
+            return
+        hr = state.hr
+        try:
+            if hr is not None and (self.core_fwd or state.core_hr_state == "none"):
+                await self.core_ctrl.write(bytes([0x13, int(hr) & 0xFF]), True)
+                if not self.core_fwd:
+                    self.core_fwd = True
+                    log("CORE gets no heart rate: sending the strap's")
+            elif self.core_fwd and hr is None:
+                await self.core_ctrl.write(b"\x13", True)
+                self.core_fwd = False
+                log("no heart rate to send to CORE: stopped")
+        except Exception as e:
+            print("ble: CORE heart rate input failed", repr(e))
 
     def on_cp(self, data):
         power, crank = parse_cp(data)
@@ -263,6 +359,8 @@ class Link:
                 if self.batt_ch and time.ticks_diff(time.ticks_ms(), batt_due) >= 0:
                     batt_due = time.ticks_add(time.ticks_ms(), BATT_READ_S * 1000)
                     await self._read_battery()
+                if "core" in self.roles:
+                    await self._core_heart_rate()
                 await asyncio.sleep(1)
         finally:
             for t in tasks:
@@ -273,7 +371,22 @@ class Link:
                 state.hr_battery = None
             if "power" in self.roles:
                 state.power_battery = None
+            if "core" in self.roles:
+                state.core_battery = None
             log("disconnected", self.addr)
+
+
+def _hear(addr, rssi, result=None):
+    """A saved sensor's signal, each time its advertising is heard: the page shows it (MicroPython can't read the
+    signal of a connection). Only the saved sensors are kept."""
+    saved = [_cfg.get(r + "_addr") for r in ROLES] if _cfg else []
+    if addr in saved:
+        for a in list(state.heard):
+            if a not in saved:
+                del state.heard[a]
+        state.heard[addr] = (rssi, state.uptime_s)
+        if result is not None and addr == _cfg.get("core_addr"):     # CORE's raw advertising / scan response
+            state.core_adv = [binascii.hexlify(bytes(x or b"")).decode() for x in (result.adv_data, result.resp_data)]
 
 
 async def _find():
@@ -284,6 +397,8 @@ async def _find():
         async with aioble.scan(SCAN_MS, interval_us=30000, window_us=30000, active=True) as scanner:
             async for result in scanner:
                 addr = result.device.addr_hex()
+                _hear(addr, result.rssi, result)
+                _note_beacon(result, addr)
                 if addr in _owner.values() or ble_share.is_share(result.name()):
                     continue                     # (a fan sharing heart rate is never taken as a strap)
                 roles = _offers(list(result.services()))
@@ -295,7 +410,7 @@ async def _find():
                     if who is not None:
                         active_seen = True
                 if any(_may_take(r, addr) for r in roles):
-                    _names[addr] = result.name() or ""
+                    _names[addr] = result.name() or _names.get(addr, "")
                     return result.device
     # Straps only send while worn: if only another rider's strap is around, that rider is riding.
     if other and not active_seen and _owner["hr"] is None and not state.rider_by_hand:
@@ -317,6 +432,23 @@ async def _find():
     else:
         _other[0], _other[1] = None, 0
     return None
+
+
+def _note_beacon(result, addr):
+    """The saved CORE's temperature from its advertising, while it isn't connected (no Heat Strain Index there)."""
+    if _owner["core"] is not None or not _cfg or addr != _cfg.get("core_addr"):
+        return
+    try:
+        for cid, payload in result.manufacturer():
+            t = parse_core_beacon(payload) if cid in CORE_COMPANIES else None
+            if t is not None:
+                state.core_temp = t
+                state.core_skin = state.core_hsi = state.core_quality = state.core_hr_state = None
+                state.core_hr = None
+                state.core_source = "beacon"
+                _beacon["ms"] = time.ticks_ms()
+    except Exception:
+        pass
 
 
 async def _connect(device):
@@ -351,6 +483,9 @@ async def _search():
         if device and await _connect(device):
             retry_s = RETRY_MIN_S
             continue
+        if _owner["hr"] and _owner["power"] and not _owner["core"] and not _cfg.get("core_addr"):
+            await asyncio.sleep(CORE_SCAN_S)    # most riders have no CORE: look now and then, not all the time
+            continue
         await asyncio.sleep(retry_s)
         retry_s = min(retry_s * 2, RETRY_MAX_S)
 
@@ -360,12 +495,18 @@ async def _expire():
         now = time.ticks_ms()
         for role in ROLES:
             last = _last[role]
-            if last is None or time.ticks_diff(now, last) > STALE_MS:
+            stale = CORE_STALE_MS if role == "core" else STALE_MS
+            if last is None or time.ticks_diff(now, last) > stale:
                 if role == "hr":
                     state.hr = None
+                elif role == "core":
+                    _core_clear(keep_beacon=True)
                 else:
                     state.power = None
                     state.cadence = None
+        if state.core_source == "beacon" and (_beacon["ms"] is None
+                                              or time.ticks_diff(now, _beacon["ms"]) > BEACON_STALE_MS):
+            _core_clear()
         await asyncio.sleep(1)
 
 
@@ -378,7 +519,7 @@ async def run(cfg):
 
 
 async def scan_nearby():
-    """For GET /api/scan: nearby HR and power sensors, plus the ones connected now
+    """For GET /api/scan: nearby HR, power and CORE sensors, plus the ones connected now
     (a connected sensor usually stops advertising)."""
     found = {}
     async with _radio:
@@ -387,7 +528,8 @@ async def scan_nearby():
                 roles = _offers(list(result.services()))
                 if roles and not ble_share.is_share(result.name()):
                     addr = result.device.addr_hex()
-                    found[addr] = {"addr": addr, "name": result.name() or "", "rssi": result.rssi,
+                    _hear(addr, result.rssi, result)
+                    found[addr] = {"addr": addr, "name": result.name() or _names.get(addr, ""), "rssi": result.rssi,
                                    "types": roles, "connected": False}
     for role in ROLES:
         addr = _owner[role]

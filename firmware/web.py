@@ -11,6 +11,7 @@ import os
 import state
 import config
 import version
+import mpbuild
 import profiles
 import link
 import logbook
@@ -31,7 +32,8 @@ CAPTIVE_CHECKS = ("/generate_204", "/gen_204",                     # Android, Ch
                   "/connecttest.txt", "/ncsi.txt", "/redirect",     # Windows
                   "/canonical.html", "/success.txt")                # Firefox
 RESET_GROUPS = {               # POST /api/reset: what goes back to the defaults (network and PIN never)
-    "rider": ("ftp", "hr_max", "hr_rest", "use", "response", "up_thresholds", "down_thresholds"),
+    "rider": ("ftp", "hr_max", "hr_rest", "use", "response", "up_thresholds", "down_thresholds", "heat",
+              "heat_levels"),
     "fan": ("dwell_up_s", "dwell_down_s", "manual_timeout_min", "idle_off_min", "max_level"),
 }
 SECRETS = ("wifi_password", "ap_password", "settings_pin", "link_key", "follow_key")
@@ -54,6 +56,12 @@ def setup_needed(cfg):
     return REQUIRE_SETUP and (not cfg.get("settings_pin") or cfg.get("ap_password") == config.DEFAULTS["ap_password"])
 
 
+def _heard(role):
+    """[dBm, seconds ago] the saved sensor was last heard, or None."""
+    h = state.heard.get(_cfg.get(role + "_addr"))
+    return [h[0], state.uptime_s - h[1]] if h else None
+
+
 def status():
     return {
         "setup": setup_needed(_cfg),
@@ -65,11 +73,20 @@ def status():
         "p_ema": state.p_ema, "p_score": state.p_score, "hr_score": state.hr_score,
         "demand": state.demand, "basis": state.basis, "hr_off": state.hr_off, "hr_caps": state.hr_caps,
         "hr_share": state.share, "hr_share_name": state.share_name,
+        "hr_share_pair": state.share_pairing, "hr_share_bonds": state.share_bonds, "hr_share_secure": state.share_secure,
+        "hr_share_receivers": state.share_receivers, "hr_share_limit": state.share_limit,
+        "core_connected": state.core_connected, "core_name": state.core_name, "core_temp": state.core_temp,
+        "core_skin": state.core_skin, "core_hsi": state.core_hsi, "core_quality": state.core_quality,
+        "core_source": state.core_source, "core_battery": state.core_battery, "core_hr_state": state.core_hr_state,
+        "core_hr": state.core_hr, "core_raw": state.core_raw, "core_adv": state.core_adv,
+        "hr_rssi": _heard("hr"), "power_rssi": _heard("power"), "core_rssi": _heard("core"),
+        "heat": state.heat, "heat_floor": state.heat_floor,
         "wifi": state.wifi_mode, "ssid": state.wifi_ssid, "ip": state.ip,
         "rider": state.rider,
         "uptime": state.uptime_s, "notice": state.notice, "manual_left_s": state.manual_left_s, "nudge": state.nudge,
         "off_left_s": None if state.off_at_s is None else max(0, state.off_at_s - state.uptime_s),
         "version": version.VERSION, "board": version.BOARD, "reset_reason": state.reset_reason, "files": state.files,
+        "mp_build": mpbuild.number(),
         "rssi": state.rssi, "hr_battery": state.hr_battery, "power_battery": state.power_battery,
         "box_temp": None if state.box_temp is None else round(state.box_temp),
         "mem_free": gc.mem_free() if hasattr(gc, "mem_free") else None,   # MicroPython only
@@ -113,7 +130,8 @@ def diagnostics_text(cfg):
     """The diagnostics file, as a generator of text pieces (streamed, so the logbooks never sit in RAM)."""
     import json
     yield "WattWind diagnostics\n====================\n"
-    yield "firmware {} (board {})\n\n".format(version.VERSION, version.BOARD)
+    yield "firmware {} (board {})\nMicroPython: {} (WattWind MicroPython {})\n\n".format(
+        version.VERSION, version.BOARD, mpbuild.machine(), mpbuild.number())
     try:
         yield "status:\n" + json.dumps(status()) + "\n\n"
     except Exception as e:

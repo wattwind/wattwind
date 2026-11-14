@@ -47,6 +47,19 @@ def test_ride_lines_settings_and_minute_line(tmp_path):
     assert r.status()["on"] and r.status()["left_s"] == detail.ON_S - 3
 
 
+def test_core_values_in_ride_lines_and_heat_settings(tmp_path):
+    r = rec(tmp_path)
+    r.start(100, "2026-11-08 18:00Z", free=2_000_000)
+    r.second(101, st(hr=150, level=2, target_level=2, core_temp=38.12, core_hsi=3.4, core_skin=35.214, core_quality=4,
+                     heat=True), dict(CFG, heat=True, heat_levels=[3.0, 7.0]))
+    r.second(102, st(hr=150, level=2, target_level=2, core_temp=38.1, core_hsi=None, core_skin=None, core_quality=None),
+             CFG)
+    t = text(r)
+    assert "101 R - - 150 2 2 a core=38.12 hsi=3.4 skin=35.2 q=4 heat\n" in t
+    assert "102 R - - 150 2 2 a core=38.1 hsi=- skin=- q=-\n" in t
+    assert '"heat_levels": [3.0, 7.0]' in t and '"heat": true' in t   # a ride with the heat rule can be replayed
+
+
 def test_lines_are_batched_not_written_each_second(tmp_path):
     r = rec(tmp_path)
     r.start(0, "t", free=2_000_000)

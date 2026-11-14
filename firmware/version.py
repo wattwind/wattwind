@@ -6,5 +6,8 @@ Test builds (to try a fix with someone, before the release): the coming version 
 1.0.1-test.2, then 1.0.1. A dash counts as older than the plain number (semver), so the release replaces them; the
 page marks them "test version". Signed with the same key; share them on the issue or as a GitHub pre-release.
 """
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 BOARD = "v2.0-3.x"        # relay boards this firmware is made for (same relay pins); not read from the board
+MP_BUILD_NEEDED = 1       # the oldest MicroPython file this firmware's basics need (mpbuild.py: 1 = the 1.0 file).
+                          # Raise it only if the basics can't run on older files: make_manifest writes it into the
+                          # signed manifest ("requires"), and fans on 1.1+ then refuse the Wi-Fi update on older files.

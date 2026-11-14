@@ -7,7 +7,9 @@ after the end (they hold heart rate: nobody needs them for longer).
 
 Lines start with the uptime, like the logbook, so the two line up:
   up R power cadence hr level target mode[x]   every second while riding (sensor data or fan on); mode a/m/f,
-                                               x = the strap is connected but not worn; "-" = no value
+                                               x = the strap is connected but not worn; "-" = no value;
+                                               with a CORE: core= hsi= skin= q= (quality 0-4), "heat" = the
+                                               heat rule holds the level
   up H <time> free= lag= rssi= chip= leader=   every minute: memory, the longest delay of the 1 s tick (ms), Wi-Fi,
                                                chip temperature, linked-fans packets heard
   up E <text>                                  events: sensor data gaps over 2 s, fan level changes with the
@@ -33,7 +35,7 @@ BUF_BYTES = 4096
 SAVE_S = 300                    # time left / keep time saved this often (survives a restart)
 GAP_MS = 2000                   # sensor data gaps longer than this are noted
 REPLAY_KEYS = ("ftp", "hr_max", "hr_rest", "use", "response", "up_thresholds", "down_thresholds", "dwell_up_s",
-               "dwell_down_s", "idle_off_min", "max_level")
+               "dwell_down_s", "idle_off_min", "max_level", "heat", "heat_levels")
 
 
 def _size(p):
@@ -50,8 +52,15 @@ def _remove(p):
         pass
 
 
-def _v(x):
-    return "-" if x is None else str(int(round(x)))
+def _h(x):
+    """Heat Strain Index: one decimal, "-" when missing."""
+    return "-" if x is None else "{:.1f}".format(x)
+
+
+def _v(x, digits=0):
+    if x is None:
+        return "-"
+    return "{:.{}f}".format(x, digits) if digits else str(int(round(x)))
 
 
 class Recorder:
@@ -120,7 +129,8 @@ class Recorder:
         self._last, self._settings = now_s, None
         self._minute_at = now_s
         self.line(now_s, "E", "recording started {} (24 h; {} KB per file, two files)".format(stamp, self.max_bytes // 1024))
-        self.line(now_s, "E", "columns: up R power cadence hr level target mode(a/m/f, x = strap not worn) | "
+        self.line(now_s, "E", "columns: up R power cadence hr level target mode(a/m/f, x = strap not worn)"
+                              " [core hsi skin q(0-4) heat] | "
                               "up H time free lag(ms) rssi chip leader-packets | up E event | up S settings")
         self.flush()
         self._save_meta()
@@ -190,9 +200,13 @@ class Recorder:
                 self._settings = s
                 self.line(now_s, "S", json.dumps(s))
             if st.power is not None or st.hr is not None or st.level:
-                self.line(now_s, "R", "{} {} {} {} {} {}{}".format(
+                core = getattr(st, "core_temp", None)
+                self.line(now_s, "R", "{} {} {} {} {} {}{}{}".format(
                     _v(st.power), _v(st.cadence), _v(st.hr), st.level, st.target_level,
-                    {"auto": "a", "manual": "m", "follow": "f"}.get(st.mode, "?"), "x" if st.hr_off else ""))
+                    {"auto": "a", "manual": "m", "follow": "f"}.get(st.mode, "?"), "x" if st.hr_off else "",
+                    "" if core is None else " core={} hsi={} skin={} q={}{}".format(
+                        core, _h(getattr(st, "core_hsi", None)), _v(getattr(st, "core_skin", None), 1),
+                        _v(getattr(st, "core_quality", None)), " heat" if getattr(st, "heat", False) else "")))
             if now_s >= self._minute_at:
                 self._minute_at = now_s + 60
                 try:

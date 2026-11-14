@@ -283,9 +283,21 @@ def _apply(info, cfg, state, name):
     state.hr = info.get("hr")
     state.power = info.get("pw")
     state.cadence = info.get("cad")
-    state.hr_connected = bool(info.get("hrc"))
-    state.power_connected = bool(info.get("pwc"))
-    state.hr_name = state.power_name = "via " + name
+    state.hr_connected = bool(info.get("hrc")) and state.hr is not None     # a strap not worn sends no heart rate:
+    state.power_connected = bool(info.get("pwc"))                           # grey dot, as on the leader
+    state.hr_name, state.power_name = "HR via " + name, "power via " + name
+    core, hsi = _num(info.get("core"), 20, 45), _num(info.get("hsi"), 0, 25.5)   # the leader's CORE (1.1+)
+    state.core_temp, state.core_hsi = core, hsi
+    state.core_source = "leader" if core is not None else None
+    state.core_connected = core is not None          # the page's CORE dot: "via <leader>", like heart rate and power
+    state.core_name = "CORE via " + name if core is not None else ""
+
+
+def _num(v, lo, hi):
+    """A number from a leader's packet within lo..hi, else None (older leaders send none)."""
+    if isinstance(v, bool) or not isinstance(v, (int, float)) or not lo <= v <= hi:
+        return None
+    return v
 
 
 def _expire(cfg, state):
@@ -295,6 +307,9 @@ def _expire(cfg, state):
         state.leader_level = None
         state.hr = state.power = state.cadence = None
         state.hr_connected = state.power_connected = False
+        if state.core_source == "leader":
+            state.core_temp = state.core_hsi = state.core_source = None
+            state.core_connected, state.core_name = False, ""
     return fresh
 
 
@@ -340,7 +355,8 @@ async def run(cfg):
                 pkt = pack(cfg["link_key"], {
                     "id": state.link_id, "name": cfg.get("hostname", ""), "boot": boot, "seq": seq,
                     "lvl": state.level, "hr": state.hr, "pw": state.power, "cad": state.cadence,
-                    "hrc": state.hr_connected, "pwc": state.power_connected})
+                    "hrc": state.hr_connected, "pwc": state.power_connected,
+                    "core": state.core_temp, "hsi": state.core_hsi})
                 try:
                     sock.sendto(pkt, (bcast, PORT))
                 except OSError:

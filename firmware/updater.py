@@ -5,7 +5,8 @@
    release_key.py before anything else: an update not signed by this firmware's maker is refused (USB still works).
 1. start(): with the verified manifest.json (version + SHA-256 of every file) and the file sizes. The fan
    compares it with its installed manifest and answers which files differ: only those are sent (a typical
-   update is a few files). It checks the names and the free space, and empties the staging folder update/.
+   update is a few files). It checks the names, the free space and the MicroPython file the update needs
+   ("requires", mpbuild.py: refused on an older file before anything changes), and empties update/.
 2. write(): each file arrives in small pieces, appended to update/<name>. The running files are not touched.
 3. finish(): every staged file is checked against the new manifest (integrity.sha256_file), and so is every
    file that was kept. Only if all match, update_apply.json is written: the update is ready. Anything wrong:
@@ -133,14 +134,34 @@ def active():
     return _s is not None
 
 
-def start(manifest, sizes, free=None, installed=None, signed_sha=None):
-    """manifest: {"version", "files": {name: sha256}}; sizes: {name: bytes}, manifest.json included;
-    installed: {name: sha256} of the files on the fan now (None: send everything); signed_sha: SHA-256 of the
-    signed manifest.json (verified_manifest): finish() then checks that the staged manifest.json is that one.
+def check_requires(manifest, mp_build=None):
+    """The update's signed "requires" against this fan's MicroPython file (mpbuild.py). Raises UpdateError with
+    what to do; nothing has changed yet. A manifest without "requires" runs on any file (all releases up to 1.1)."""
+    req = manifest.get("requires") if isinstance(manifest, dict) else None
+    if not isinstance(req, dict):
+        return
+    need = req.get("mp_build", 1)
+    if not isinstance(need, int) or isinstance(need, bool) or need < 1:
+        raise UpdateError("the update's manifest.json has a bad \"requires\"")
+    if mp_build is None:
+        import mpbuild
+        mp_build = mpbuild.number()
+    if need > mp_build:
+        raise UpdateError("this update needs WattWind MicroPython {} or newer; this fan has {}. Install the new "
+                          "MicroPython file once over USB (build guide: Updating), then try again. Nothing was "
+                          "changed.".format(need, mp_build if mp_build > 1 else "the older file (1)"))
+
+
+def start(manifest, sizes, free=None, installed=None, signed_sha=None, mp_build=None):
+    """manifest: {"version", "files": {name: sha256}, "requires"?: {"mp_build": N}}; sizes: {name: bytes},
+    manifest.json included; installed: {name: sha256} of the files on the fan now (None: send everything);
+    signed_sha: SHA-256 of the signed manifest.json (verified_manifest): finish() then checks that the staged
+    manifest.json is that one; mp_build: this fan's MicroPython build (None: mpbuild.number()).
     Returns {"version", "send": [names to send], "need", "free"}; raises UpdateError."""
     global _s
     if not isinstance(manifest, dict) or not isinstance(manifest.get("files"), dict) or not manifest["files"]:
         raise UpdateError("not a WattWind update: no file list (manifest.json)")
+    check_requires(manifest, mp_build)          # before anything changes: an update for a newer MicroPython file
     files = manifest["files"]
     if not isinstance(sizes, dict) or set(sizes) != set(files) | {"manifest.json"}:
         raise UpdateError("the update's files don't match its manifest.json")

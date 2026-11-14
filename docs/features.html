@@ -143,6 +143,8 @@ footer { padding: 32px 0 56px; color: var(--muted); font-size: 14px; border-top:
       <li><b>Sensor lost:</b> runs on the other one; both lost: holds 2 minutes, then steps down.</li>
       <li><b>Nudge − / +:</b> up to two levels less or more for this ride; Auto still follows the workout.</li>
       <li><b>Highest level:</b> keep Auto at 1 or 2 for quiet evenings.</li>
+      <li><b>Heat from CORE:</b> with a CORE body temperature sensor, heat strain 3 keeps at least level 2, 7 level
+        3, while you ride (per rider: on unless switched off, both values adjustable).</li>
       <li><b>Idle off:</b> off after 15 minutes (adjustable) without pedaling or sensor data.</li>
       <li><b>Every threshold and time is a setting,</b> with Reset to defaults.</li>
     </ul>
@@ -156,15 +158,18 @@ footer { padding: 32px 0 56px; color: var(--muted); font-size: 14px; border-top:
         with Cycling Power or FTMS.</li>
       <li><b>Either one is enough:</b> power only, or heart rate only (rollers, a basic trainer).</li>
       <li><b>Finds your sensors by itself</b> and remembers them, so it never grabs the strap of the rider next to you.</li>
-      <li><b>Find sensors:</b> a list of what's nearby, pick one; <b>Forget</b> to change.</li>
+      <li><b>Find sensors:</b> a list of what's nearby with each one's signal, pick one; <b>Forget</b> to change. The chosen sensors show their name, connection and signal.</li>
       <li><b>Reconnects by itself</b> after a dropout.</li>
       <li><b>Your training app stays connected</b> to the same sensors (most allow two connections).</li>
       <li><b>Passes your heart rate on</b> (Share heart rate, off until ticked): for a strap that allows only one
         connection, the fan sends its heart rate on as a Bluetooth heart-rate sensor of its own,
-        <code>WattWind-XXXX HR</code>, for one app or bike computer.</li>
+        <code>WattWind-XXXX HR</code>, for one app or bike computer; one that pairs (Garmin Edge) pairs once,
+        without a code, and reconnects by itself after a restart.</li>
       <li><b>Strap taken off:</b> noticed within seconds and shown as "(not worn)", even on straps that keep
         sending their last value; Auto then goes by power.</li>
       <li><b>Sensor battery</b> shown, with a warning at 15 % or less.</li>
+      <li><b>CORE body temperature sensor</b> as a third sensor: core temperature and heat strain on the page, saved
+        per rider; it gets your strap's heart rate if it has none; read from its signal when not connected.</li>
     </ul>
     <p class="more">More: <a href="help.html#sensors">Sensors</a></p>
   </div>
@@ -172,8 +177,8 @@ footer { padding: 32px 0 56px; color: var(--muted); font-size: 14px; border-top:
   <div class="card" id="riders">
     <h2>Riders</h2>
     <ul>
-      <li><b>Up to 5 riders,</b> each with their own FTP, heart-rate range, Decide by, fan response, step levels and
-        strap.</li>
+      <li><b>Up to 5 riders,</b> each with their own FTP, heart-rate range, Decide by, fan response, step levels, heat
+        levels, strap and CORE.</li>
       <li><b>Switches by strap:</b> straps only send while worn, so the fan picks whoever's strap is on, within
         about 20 seconds.</li>
       <li><b>Or by hand:</b> a rider chosen in the list stays selected until you choose again.</li>
@@ -218,10 +223,10 @@ footer { padding: 32px 0 56px; color: var(--muted); font-size: 14px; border-top:
         with Chrome from about 2019, and current browsers on a computer.</li>
       <li><b>On the home screen</b> it opens like an app.</li>
       <li><b>Readable on the handlebars:</b> a big level, the mode, what happens next, live watts, rpm and bpm, the
-        demand and what decided it, sensor dots.</li>
+        demand and what decided it, sensor dots; with a CORE, core temperature and heat strain.</li>
       <li><b>The fan's name in the header,</b> so with several fans you know which one you're on.</li>
-      <li><b>Warnings when something needs you:</b> a low sensor battery, a hot controller, damaged firmware files,
-        a safe start.</li>
+      <li><b>Warnings when something needs you:</b> a low sensor battery, heat strain in CORE's zone 4, a hot
+        controller, damaged firmware files, a safe start.</li>
       <li><b>Never loses your input:</b> unsaved changes are marked, with Save and Undo, and it asks before you leave;
         a wrong value is marked at its field with what to change.</li>
       <li><b>Lost contact is shown:</b> values grey out, and after a restart the page finds the fan again by itself.</li>
@@ -337,7 +342,7 @@ footer { padding: 32px 0 56px; color: var(--muted); font-size: 14px; border-top:
       <li><b>All of it published:</b> firmware (MIT), board and box (CERN-OHL-P), site and docs (CC BY).</li>
       <li><b>Change anything:</b> plain MicroPython, a KiCad board, a Fusion script; your own firmware with your own
         signing key.</li>
-      <li><b>Tested on the computer:</b> 400+ tests, including whole simulated rides and a real ride replayed
+      <li><b>Tested on the computer:</b> 500+ tests, including whole simulated rides and a real ride replayed
         second by second.</li>
       <li><b>Measured on a real ride:</b> the same power, heart rate and cadence as a bike computer, under a second
         later.</li>

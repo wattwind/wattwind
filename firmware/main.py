@@ -96,7 +96,8 @@ import os
 RESET_REASON_FILE = "reset_reason.txt"   # written just before an intentional reset, read at the next boot
 ERASED_FILE = "erased.txt"                # "Erase everything" ran: show it once on the page
 USER_FILES = ("config.json", "log.txt", "log.old.txt", QUICK_BOOTS_FILE, "crash_boots.txt",
-              "detail.txt", "detail.old.txt", "detail.json")   # everything the user's use left behind
+              "detail.txt", "detail.old.txt", "detail.json",
+              "ble_bonds.json")   # everything the user's use left behind (ble_bonds: paired receivers)
 
 
 def _erase_user_files():
@@ -288,7 +289,7 @@ def _auto_step(logic, now_s):
     manual timeout, log in auto mode. Manual is an ordinary fan: the idle off (no pedaling)
     applies only in auto, so the fan can keep running after a ride."""
     logic.nudge = state.nudge if state.mode == "auto" else 0
-    target = logic.update(now_s, state.power, state.cadence, state.hr)
+    target = logic.update(now_s, state.power, state.cadence, state.hr, state.core_hsi)
     if _follow is not None:
         _follow.update(now_s, state.leader_level, cfg.get("follow_offset", 0))
         if state.mode == "follow":
@@ -303,6 +304,8 @@ def _auto_step(logic, now_s):
         state.nudge = logic.nudge           # cleared by fan_logic when the ride ends
     state.p_ema, state.p_score, state.hr_score, state.demand = logic.p_ema, logic.p_score, logic.hr_score, logic.demand
     state.basis = logic.basis
+    state.heat = logic.heat                 # CORE's heat strain holds the level now
+    state.heat_floor = logic.heat_floor     # the level CORE's heat strain asks for at least (0: none)
     if state.mode == "manual":
         in_manual_s = state.uptime_s - state.manual_since_s
         timeout_s = cfg["manual_timeout_min"] * 60

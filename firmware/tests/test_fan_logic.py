@@ -530,3 +530,99 @@ def test_why_the_level_changed():
     ride(fl2, 0, 60, power=200, cadence=90)
     ride(fl2, 60, 400, power=None, cadence=None, hr=None)   # no sensor data at all
     assert fl2.why == "no sensor data"
+
+
+# --- heat from CORE (release 1.1) ---------------------------------------------------------------------
+
+def heat_ride(fl, start, seconds, hsi, power=80, cadence=85, hr=None):
+    """Easy riding (80 W of 200 FTP: demand 0.4, level 0-ish) with a given Heat Strain Index."""
+    levels = []
+    for t in range(start, start + seconds):
+        levels.append(fl.update(t, power, cadence, hr, hsi))
+    return start + seconds, levels
+
+
+def test_no_core_changes_nothing():
+    a, b = make(), make()
+    for t in range(0, 600):
+        assert a.update(t, 150, 85, 140) == b.update(t, 150, 85, 140, None)
+    assert a.heat_floor == 0 and not a.heat
+
+
+def test_heat_zone_3_keeps_level_2_while_riding_easy():
+    fl = make()
+    t, levels = heat_ride(fl, 0, 120, hsi=3.5)
+    assert max(levels) == 2 and levels[-1] == 2       # easy power alone would stay at 0
+    assert fl.heat_floor == 2 and fl.heat
+    assert "heat strain" in fl.why
+
+
+def test_heat_steps_one_level_at_a_time_with_the_dwell_time():
+    fl = make()
+    t, levels = heat_ride(fl, 0, 60, hsi=8.0)
+    assert levels[0] == 0                              # no jump straight up
+    assert levels.index(1) >= CFG["dwell_up_s"] - 1 and levels.index(2) - levels.index(1) >= CFG["dwell_up_s"]
+    t, levels = heat_ride(fl, t, 60, hsi=8.0)
+    assert levels[-1] == 3
+
+
+def test_heat_holds_the_level_against_low_demand_then_lets_go():
+    fl = make()
+    t, _ = heat_ride(fl, 0, 120, hsi=4.0)
+    assert fl.level == 2
+    t, levels = heat_ride(fl, t, 300, hsi=4.0)         # long easy stretch: demand alone would step down
+    assert min(levels) == 2
+    t, levels = heat_ride(fl, t, 30, hsi=2.7)          # inside the hysteresis band: still held
+    assert min(levels) == 2
+    t, levels = heat_ride(fl, t, 300, hsi=2.0)         # cooled: back to what demand says
+    assert levels[-1] < 2 and fl.heat_floor == 0
+
+
+def test_heat_never_above_max_level():
+    fl = make(max_level=2)
+    t, levels = heat_ride(fl, 0, 200, hsi=9.0)
+    assert max(levels) == 2
+
+
+def test_heat_off_per_rider():
+    fl = make(heat=False)
+    t, levels = heat_ride(fl, 0, 200, hsi=9.0)
+    assert max(levels) == 0 and fl.heat_floor == 0
+
+
+def test_heat_does_not_keep_the_fan_on_after_the_ride():
+    fl = make()
+    t, _ = heat_ride(fl, 0, 120, hsi=5.0)
+    assert fl.level == 2
+    t, levels = heat_ride(fl, t, 400, hsi=5.0, power=0, cadence=0)    # stopped pedaling, still hot
+    assert levels[-1] == 0                                              # the stop step-down wins
+
+
+def test_heat_with_no_power_or_heart_rate_follows_sensor_loss():
+    fl = make()
+    t, _ = heat_ride(fl, 0, 120, hsi=5.0)
+    t, levels = heat_ride(fl, t, 400, hsi=5.0, power=None, cadence=None, hr=None)
+    assert levels[-1] == 0                                              # "no sensor data" steps down as before
+
+
+def test_demand_above_the_floor_still_steps_up():
+    fl = make()
+    t, levels = heat_ride(fl, 0, 200, hsi=3.5, power=190, cadence=90)  # 0.95 of FTP: level 3
+    assert levels[-1] == 3 and not fl.heat                              # demand, not heat, holds it
+
+
+def test_heat_levels_per_rider():
+    fl = make(heat_levels=[2.0, 5.0])                  # a rider who wants the fan earlier
+    t, levels = heat_ride(fl, 0, 120, hsi=2.2)
+    assert levels[-1] == 2 and fl.heat_floor == 2
+    t, levels = heat_ride(fl, t, 120, hsi=5.0)
+    assert levels[-1] == 3 and fl.heat_floor == 3
+    t, _ = heat_ride(fl, t, 30, hsi=4.6)               # 0.5 below level 3's value: still held
+    assert fl.heat_floor == 3
+    t, _ = heat_ride(fl, t, 5, hsi=4.4)                # below that: level 2 again
+    assert fl.heat_floor == 2
+    t, _ = heat_ride(fl, t, 5, hsi=1.4)
+    assert fl.heat_floor == 0
+    default = make()
+    heat_ride(default, 0, 120, hsi=2.2)                # the default levels: 2.2 is no heat strain yet
+    assert default.heat_floor == 0

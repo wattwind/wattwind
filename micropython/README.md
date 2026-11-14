@@ -7,8 +7,16 @@ from fixed pools sized `MAX_NR_HCI_CONNECTIONS 1` and `MAX_NR_GATT_CLIENTS 1`
 `OSError(107)` (ENOTCONN: BTstack's `gap_connect` returns `GATT_CLIENT_NOT_CONNECTED` when it
 can't allocate a connection, `lib/btstack/src/hci.c`).
 
-This build is MicroPython **v1.29.0, unchanged except for those two limits, raised to 3**
-(strap + trainer + one app or watch for Share heart rate). Cost: about 5 KB less RAM.
+This build is MicroPython **v1.29.0** with:
+
+- those two limits **raised to 6** (`btstack-3-connections.patch` sets 3, `build.sh` raises it): the Pico's radio
+  itself then takes up to 4 sensors (strap, trainer, CORE) plus one app or watch for Share heart rate (measured);
+- **Bluetooth pairing** (`btstack-pairing.patch`, notes in it), so a Garmin Edge can pair with Share heart rate;
+- the label **"WattWind MicroPython 2"** in the board name (`os.uname().machine`), which the firmware reads to know what
+  the file can do (`firmware/mpbuild.py`).
+
+Release 1.0 had a simpler file (`...-ble3.uf2`: 3 connections, no pairing, no label); the firmware still runs on it,
+with those features switched off and a note on the page.
 
 ## Flashing
 
@@ -16,7 +24,7 @@ Hold BOOTSEL, plug in USB, copy the UF2 for your board to the `RPI-RP2` / `RP235
 
 | Board | File |
 |---|---|
-| Pico 2 W | `firmware/RPI_PICO2_W-v1.29.0-wattwind-ble3.uf2` |
+| Pico 2 W | `firmware/RPI_PICO2_W-v1.29.0-wattwind-mp2.uf2` |
 
 The Pico W build (`RPI_PICO_W`) still builds and is kept for reference, but the project supports only the
 Pico 2 W (since 2026-10-30).
@@ -29,8 +37,9 @@ the patched source as "dirty"); the stock firmware shows plain `v1.29.0`.
 
 | File | What |
 |---|---|
-| `btstack-3-connections.patch` | The only change: `ports/rp2/btstack_inc/btstack_config.h` |
-| `build.sh` | Builds the UF2s in a throwaway Ubuntu 24.04 Docker container: clones v1.29.0, applies the patch, runs the standard `make` |
+| `btstack-3-connections.patch` | The connection limits: `ports/rp2/btstack_inc/btstack_config.h` (3; `build.sh` raises it to 6) |
+| `btstack-pairing.patch` | Pairing: Security Manager handler, keys kept by the firmware, GAP Appearance |
+| `build.sh` | Builds the UF2s in a throwaway Ubuntu 24.04 Docker container: clones v1.29.0, applies the patches, sets the limit and the label, runs the standard `make`; options for experiments at its top |
 | `firmware/` | Built UF2s (git-ignored; to be published as GitHub release assets) and `firmware/licenses/` from the build |
 | `LICENSES/` | The licences of what is inside the UF2 (MicroPython, BTstack, cyw43-driver, Pico SDK): **publish them with the UF2**; BTstack and cyw43-driver may only be used with Raspberry Pi chips |
 
@@ -40,15 +49,15 @@ Needs only [Docker](https://www.docker.com/) (Docker Desktop on Windows, started
 project root, in Git Bash on Windows or any Linux/macOS shell:
 
 ```bash
+micropython/build.sh RPI_PICO2_W     # the release file (Pico 2 W)
 micropython/build.sh                 # Pico W and Pico 2 W
-micropython/build.sh RPI_PICO_W      # one board
 ```
 
 The container installs Ubuntu's ARM compiler, builds both UF2s into `micropython/firmware/`
 and is deleted afterwards; nothing is installed on your PC. A build takes a few minutes.
 
-Without Docker, on Linux: clone v1.29.0, apply `btstack-3-connections.patch`, then
-`make -C mpy-cross && make -C ports/rp2 BOARD=RPI_PICO2_W submodules all`.
+Without Docker, on Linux: follow the steps in `build.sh` (clone v1.29.0, apply both patches, the `sed` lines for
+the limit and the label), then `make -C mpy-cross && make -C ports/rp2 BOARD=RPI_PICO2_W submodules all`.
 
 ## Troubleshooting: freezes after Ctrl-D
 

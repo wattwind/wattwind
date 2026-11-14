@@ -43,6 +43,9 @@ DEFAULTS = {
     # BLE sensors ("" = use the first one found and save it)
     "hr_addr": "",
     "power_addr": "",
+    "core_addr": "",             # CORE body temperature sensor (release 1.1), per rider like the strap
+    "heat": True,                # Auto: the heat rule from CORE's Heat Strain Index (fan_logic), per rider
+    "heat_levels": [3.0, 7.0],   # ... the Heat Strain Index for at least level 2, level 3 (let go 0.5 below), per rider
     "hr_rr": [],                 # heart-rate sensors that send beat times (ble_parse.HrContact), remembered
     "hr_share": False,           # pass the strap's heart rate on as a Bluetooth heart-rate sensor (ble_share.py)
 

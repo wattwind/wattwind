@@ -289,12 +289,14 @@ footer { padding: 32px 0 56px; color: var(--muted); font-size: 14px; border-top:
       service, or FTMS, which most smart trainers use).</li>
     <li><b>Heart rate:</b> any Bluetooth heart-rate strap or armband (Garmin, Polar, Wahoo, …). Most straps send
       both ANT+ and Bluetooth; sensors with ANT+ only don't work.</li>
+    <li><b>Body temperature (optional):</b> a CORE sensor. The fan shows your core temperature and heat strain, and
+      gives you more air when the heat strain climbs, even at an easy pace.</li>
     <li><b>Either one is enough.</b> Power alone, heart rate alone (rollers, a basic trainer) or both; with both,
       the fan follows whichever says you're working harder.</li>
     <li><b>Your training app can stay connected</b> (Zwift, TrainerRoad, …) if the sensor accepts two Bluetooth
       connections at once; most current straps and trainers do. If one doesn't, connect the app to it over
       ANT+ instead, or tick <b>Share heart rate</b>: the fan passes the strap's heart rate on to one app or bike
-      computer over Bluetooth (one that connects without pairing; Garmin devices take the strap over ANT+).</li>
+      computer over Bluetooth, including a Garmin Edge, which pairs once and then reconnects by itself.</li>
   </ul>
   <h3>Mains</h3>
   <p>Designed and tested for <b>230 V, 50 Hz</b> (Europe and similar). 120 V should work but is untested, and it
@@ -338,6 +340,8 @@ footer { padding: 32px 0 56px; color: var(--muted); font-size: 14px; border-top:
     <li><b>Too much or too little today?</b> − and + on the page shift Auto by a level for this ride, and a
       maximum level keeps evenings quiet.</li>
     <li><b>Calm, Normal or Quick:</b> one setting for how eagerly it follows you.</li>
+    <li><b>Running hot?</b> With a CORE body temperature sensor, rising heat strain keeps the fan at level 2 or 3
+      while you ride, even when your watts say less.</li>
   </ul>
   <details class="more">
     <summary>The details: timings, sensor loss, and how the numbers work</summary>
@@ -480,7 +484,7 @@ demand   = max(p_score, hr_score)</code></pre>
       <h3>Leader and followers</h3>
       <ul>
         <li>One WattWind, the <b>leader</b>, reads the heart-rate strap and the trainer, the same as a single fan.</li>
-        <li>It sends the heart rate, power, cadence and its level over your home Wi-Fi once a second.</li>
+        <li>It sends the heart rate, power, cadence and its level (and, with a CORE, body temperature and heat strain) over your home Wi-Fi once a second.</li>
         <li>Any number of <b>followers</b> listen. They don't use Bluetooth at all, so the sensors keep a free
           connection for your training app.</li>
       </ul>
@@ -493,7 +497,7 @@ demand   = max(p_score, hr_score)</code></pre>
         <li><b>One or two lower:</b> the same, but gentler, for a side fan that joins in with harder efforts: one
           lower is off while the leader is at 1, two lower runs only when the leader is at 3. <b>One higher</b> for a weaker or
           farther fan; when the leader is off, it is off too.</li>
-        <li><b>Own settings:</b> takes the leader's heart rate and power and decides with its own Auto settings, for
+        <li><b>Own settings:</b> takes the leader's heart rate and power (and a CORE's heat strain) and decides with its own Auto settings, for
           example a fan that only starts at hard efforts.</li>
       </ul>
     </div>
@@ -544,7 +548,7 @@ demand   = max(p_score, hr_score)</code></pre>
       <figcaption>Built-in help (also on this site: <a href="help.html">user manual</a>).</figcaption>
     </figure>
     <figure>
-      <img src="img/ui-settings.png" alt="Settings: FTP, heart rate range, step-up and step-down thresholds, fan response, timeouts, network and sensors" width="500" height="1750" loading="lazy">
+      <img src="img/ui-settings.png" alt="Settings, the Rider group open: FTP, heart-rate range, Heat from CORE and its levels, Decide by, fan response, step-up and step-down thresholds; the other groups (Timing, Wi-Fi, PIN, Sensors and more) closed below" width="500" height="1750" loading="lazy">
       <figcaption>Settings.</figcaption>
     </figure>
   </div>
@@ -552,13 +556,13 @@ demand   = max(p_score, hr_score)</code></pre>
     <div class="card">
       <h3>One page, phone first</h3>
       <ul>
-        <li><b>Status:</b> big fan level, mode, live power / HR / cadence, demand score, sensor dots.</li>
+        <li><b>Status:</b> big fan level, mode, live power / HR / cadence, demand score, sensor dots, and with a CORE your core temperature and heat strain.</li>
         <li><b>Control:</b> Auto · Off · 1 · 2 · 3.</li>
-        <li><b>Riders</b> (<a href="help.html#settings">manual</a>)<b>:</b> up to 5 profiles (FTP, heart-rate range, power / heart rate / both, fan response, step up / down levels, own strap); the fan switches to
+        <li><b>Riders</b> (<a href="help.html#settings">manual</a>)<b>:</b> up to 5 profiles (FTP, heart-rate range, power / heart rate / both, fan response, step up / down levels, Heat from CORE and its levels, own strap and CORE); the fan switches to
           whoever's strap is being worn.</li>
         <li><b>Linked fans</b> (<a href="help.html#linked">manual</a>)<b>:</b> more WattWinds can follow one leader over Wi-Fi (same level, or their own settings
           from the leader's heart rate and power); only the leader uses the sensors' Bluetooth.</li>
-        <li><b>Settings:</b> FTP, HR max/rest, thresholds, fan response, timeouts, sensor choice, Share heart rate, Wi-Fi,
+        <li><b>Settings:</b> FTP, HR max/rest, thresholds, fan response, Heat from CORE, timeouts, sensor choice, Share heart rate, Wi-Fi,
           hostname, a Restart button, and <b>Erase everything</b> before you give the fan away.</li>
         <li><b>Help:</b> a built-in manual at <code>/help</code>, behind the ? next to the title. The same
           <a href="help.html">user manual</a> is on this site, so you can read it before building.</li>
@@ -633,7 +637,8 @@ demand   = max(p_score, hr_score)</code></pre>
     <li><b>Linked fans talk encrypted.</b> Heart rate and power between your fans are encrypted and signed with a
       key only paired fans have: other devices on your network can't read or fake them.</li>
     <li><b>Heart rate over Bluetooth only if you ask.</b> Share heart rate is off until you tick it; while it's on,
-      the fan sends your heart rate like a strap does, to one app or watch nearby.</li>
+      the fan sends your heart rate like a strap does, to one app or watch nearby. (A CORE sensor of yours that gets
+      no heart rate of its own gets it from the fan.)</li>
     <li><b>Websites can't reach it through your browser.</b> The fan answers only requests addressed to it by its own
       name or address, and takes commands only from its own page.</li>
     <li><b>Forgot the PIN or the access point password?</b> Plug the fan in and out three times (a few seconds
